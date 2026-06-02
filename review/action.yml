@@ -1,0 +1,320 @@
+name: "TeXRA Code Review"
+description: "Review a pull request with a TeXRA tool-use agent and post inline comments + a summary."
+author: "TeXRA"
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  prompt-file:
+    description: "Review prompt file. Empty uses the action's neutral default prompt."
+    required: false
+    default: ""
+  agent:
+    description: "Tool-use agent to run."
+    required: false
+    default: "review"
+  model:
+    description: "TeXRA model id. Empty resolves a default from the configured provider keys."
+    required: false
+    default: ""
+  model-defaults:
+    description: "JSON map of provider id to default model short-id, overriding the built-in review defaults."
+    required: false
+    default: ""
+  texra-version:
+    description: "Version of @texra-ai/cli to install ('' / 'latest' / a version / 'workspace')."
+    required: false
+    default: ""
+  review-marker:
+    description: "HTML-comment marker used to identify TeXRA review threads."
+    required: false
+    default: "<!-- texra-review -->"
+  resolve-threads:
+    description: "Apply thread reply/resolve/unresolve actions. Requires a token allowed to mutate threads."
+    required: false
+    default: "false"
+  github-token:
+    description: "Token used to read threads and post the review. A dedicated bot token enables thread mutations."
+    required: false
+    default: ${{ github.token }}
+  output-file:
+    description: "File where the final review message is written. Empty writes under RUNNER_TEMP."
+    required: false
+    default: ""
+
+  # --- Authorization gate (opt-in) ---
+  require-write-access:
+    description: "When 'true', require the triggering actor to have repo write access."
+    required: false
+    default: "false"
+  allow-users:
+    description: "Comma-separated usernames allowed regardless of permission, or '*'."
+    required: false
+    default: ""
+  allow-bots:
+    description: "Comma-separated bot usernames allowed, or '*'."
+    required: false
+    default: ""
+
+  # --- Provider API keys (forwarded to the CLI as <PROVIDER>_API_KEY) ---
+  anthropic-api-key:
+    description: "Anthropic API key."
+    required: false
+    default: ""
+  openai-api-key:
+    description: "OpenAI API key."
+    required: false
+    default: ""
+  deepseek-api-key:
+    description: "DeepSeek API key."
+    required: false
+    default: ""
+  google-api-key:
+    description: "Google API key."
+    required: false
+    default: ""
+  openrouter-api-key:
+    description: "OpenRouter API key."
+    required: false
+    default: ""
+  xai-api-key:
+    description: "xAI API key."
+    required: false
+    default: ""
+  moonshot-api-key:
+    description: "Moonshot API key."
+    required: false
+    default: ""
+  dashscope-api-key:
+    description: "DashScope (Qwen) API key."
+    required: false
+    default: ""
+  minimax-api-key:
+    description: "MiniMax API key."
+    required: false
+    default: ""
+  glm-api-key:
+    description: "GLM (Zhipu) API key."
+    required: false
+    default: ""
+
+outputs:
+  review-json:
+    description: "Path to the normalized review JSON ({ body, comments, thread_actions })."
+    value: ${{ steps.normalize.outputs.review-json }}
+  final-message:
+    description: "The review body."
+    value: ${{ steps.normalize.outputs.final-message }}
+  model:
+    description: "The resolved review model."
+    value: ${{ steps.model.outputs.model }}
+  output-file:
+    description: "Path to the review message file."
+    value: ${{ steps.normalize.outputs.output-file }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Bun
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      with:
+        bun-version: "1.2.21"
+        token: ${{ inputs.github-token || github.token }}
+
+    - name: Ensure Node.js available
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: "22"
+        package-manager-cache: false
+
+    - name: Install action dependencies
+      shell: bash
+      run: |
+        cd "${GITHUB_ACTION_PATH}/.."
+        bun install --production --frozen-lockfile
+
+    - name: Check repository write access
+      if: ${{ inputs.require-write-access == 'true' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
+        ALLOW_USERS: ${{ inputs.allow-users }}
+        ALLOW_BOTS: ${{ inputs.allow-bots }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" check-write-access
+
+    - name: Install TeXRA CLI
+      shell: bash
+      env:
+        TEXRA_VERSION: ${{ inputs.texra-version }}
+      run: |
+        set -euo pipefail
+        if [ "$TEXRA_VERSION" = "workspace" ]; then
+          working_directory="$GITHUB_WORKSPACE"
+          working_directory="$(cd "$working_directory" && pwd)"
+          cd "$working_directory"
+          corepack enable
+          corepack pnpm install --frozen-lockfile
+          corepack pnpm --filter @texra-ai/cli run build
+          node packages/cli/dist/bin/texra.js version
+          exit 0
+        fi
+        package='@texra-ai/cli'
+        if [ -n "$TEXRA_VERSION" ] && [ "$TEXRA_VERSION" != "latest" ]; then
+          package="${package}@${TEXRA_VERSION}"
+        fi
+        npm install -g "$package"
+        texra version
+
+    - name: Resolve review model
+      id: model
+      shell: bash
+      env:
+        TEXRA_REVIEW_MODEL: ${{ inputs.model }}
+        TEXRA_REVIEW_MODEL_DEFAULTS: ${{ inputs.model-defaults }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
+        GOOGLE_API_KEY: ${{ inputs.google-api-key }}
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
+        XAI_API_KEY: ${{ inputs.xai-api-key }}
+        MOONSHOT_API_KEY: ${{ inputs.moonshot-api-key }}
+        DASHSCOPE_API_KEY: ${{ inputs.dashscope-api-key }}
+        MINIMAX_API_KEY: ${{ inputs.minimax-api-key }}
+        GLM_API_KEY: ${{ inputs.glm-api-key }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" resolve-model
+
+    - name: Prepare PR diff and commentable lines
+      id: diff
+      shell: bash
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" prepare-diff
+
+    - name: Collect previous TeXRA review threads
+      id: threads
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
+        TEXRA_REVIEW_MARKER: ${{ inputs.review-marker }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" collect-threads
+
+    - name: Write review prompt context
+      id: context
+      shell: bash
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPOSITORY: ${{ github.repository }}
+        REPOSITORY_OWNER: ${{ github.repository_owner }}
+        REPOSITORY_NAME: ${{ github.event.repository.name }}
+        PR_TITLE_JSON: ${{ toJSON(github.event.pull_request.title) }}
+        PR_BODY_JSON: ${{ toJSON(github.event.pull_request.body) }}
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        TRIGGER_EVENT: ${{ github.event.action }}
+        REVIEW_MODE: external
+        TEXRA_REVIEW_MODEL: ${{ steps.model.outputs.model }}
+        REVIEW_CONTEXT_FILE: ${{ steps.diff.outputs.diff-file }}
+        COMMENTABLE_LINES_FILE: ${{ steps.diff.outputs.commentable-lines-md }}
+        REVIEW_THREAD_CONTEXT_FILE: ${{ steps.threads.outputs.path }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" write-prompt-context
+
+    - name: Select review prompt
+      id: select-prompt
+      shell: bash
+      env:
+        INPUT_PROMPT_FILE: ${{ inputs.prompt-file }}
+      run: |
+        file="$INPUT_PROMPT_FILE"
+        if [ -z "$file" ]; then
+          file="${GITHUB_ACTION_PATH}/../prompts/review-default.md"
+        fi
+        echo "prompt-file=$file" >> "$GITHUB_OUTPUT"
+
+    - name: Resolve prompt
+      id: prompt
+      shell: bash
+      env:
+        INPUT_PROMPT_FILE: ${{ steps.select-prompt.outputs.prompt-file }}
+        INPUT_PROMPT_CONTEXT_FILE: ${{ steps.context.outputs.path }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" resolve-prompt
+
+    - name: Run TeXRA review
+      id: run
+      shell: bash
+      env:
+        TEXRA_AGENT: ${{ inputs.agent }}
+        TEXRA_MODEL: ${{ steps.model.outputs.model }}
+        TEXRA_API_MODE: personal
+        TEXRA_APPROVAL_POLICY: never
+        TEXRA_OUTPUT_FORMAT: json
+        TEXRA_VERSION_INPUT: ${{ inputs.texra-version }}
+        TEXRA_WORKING_DIRECTORY: ${{ steps.prompt.outputs.working-directory }}
+        TEXRA_PROMPT_RELATIVE: ${{ steps.prompt.outputs.prompt-relative }}
+        TEXRA_CONTEXT_FILES: |
+          ${{ steps.diff.outputs.diff-file }}
+          ${{ steps.diff.outputs.commentable-lines-md }}
+          ${{ steps.threads.outputs.path }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
+        GOOGLE_API_KEY: ${{ inputs.google-api-key }}
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
+        XAI_API_KEY: ${{ inputs.xai-api-key }}
+        MOONSHOT_API_KEY: ${{ inputs.moonshot-api-key }}
+        DASHSCOPE_API_KEY: ${{ inputs.dashscope-api-key }}
+        MINIMAX_API_KEY: ${{ inputs.minimax-api-key }}
+        GLM_API_KEY: ${{ inputs.glm-api-key }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" run-agent
+
+    - name: Normalize review
+      id: normalize
+      shell: bash
+      env:
+        RESULT_JSON: ${{ steps.run.outputs.result-json }}
+        INPUT_OUTPUT_FILE: ${{ inputs.output-file }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" normalize-review
+
+    - name: Post TeXRA review
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
+        TEXRA_REVIEW_JSON: ${{ steps.normalize.outputs.review-json }}
+        TEXRA_REVIEW_MARKER: ${{ inputs.review-marker }}
+        TEXRA_COMMENTABLE_LINES_JSON: ${{ steps.diff.outputs.commentable-lines-json }}
+        TEXRA_THREADS_JSON: ${{ steps.threads.outputs.path }}
+        TEXRA_RESOLVE_THREADS: ${{ inputs.resolve-threads }}
+        TEXRA_REVIEW_AGENT: ${{ inputs.agent }}
+        TEXRA_REVIEW_MODEL: ${{ steps.model.outputs.model }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" post-review

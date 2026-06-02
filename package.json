@@ -1,0 +1,25 @@
+{
+  "name": "@texra-ai/texra-action",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Run a TeXRA tool-use agent in GitHub Actions — PR code review and beyond.",
+  "homepage": "https://github.com/texra-ai/texra-action",
+  "bugs": "https://github.com/texra-ai/texra-action/issues",
+  "license": "MIT",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "@types/node": "^22.10.0",
+    "prettier": "3.5.3",
+    "typescript": "^5.8.3"
+  }
+}

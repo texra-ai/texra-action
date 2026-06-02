@@ -1,0 +1,37 @@
+# Canonical TeXRA code review on every pull request.
+# Copy to .github/workflows/texra-code-review.yml in your repository.
+name: TeXRA Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: texra-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+        with:
+          # The merge ref + full history let the action compute merge-base..head.
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run TeXRA review
+        uses: texra-ai/texra-action/review@v1
+        with:
+          # Provide one or more provider keys; the model is auto-selected.
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          # deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
+          # Optional: pin the model and CLI version.
+          # model: opus48T
+          # texra-version: 0.38.5

@@ -1,0 +1,42 @@
+# Respond to "@texra" mentions in issue or PR comments by running an agent.
+# The write-access gate prevents untrusted users from spending provider credits.
+name: TeXRA Mention
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  respond:
+    if: ${{ contains(github.event.comment.body, '@texra') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: texra
+        uses: texra-ai/texra-action@v1
+        with:
+          agent: review
+          prompt: ${{ github.event.comment.body }}
+          # Only run for users with repo write access.
+          require-write-access: "true"
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Reply with the result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const body = fs.readFileSync(process.env.OUTPUT_FILE, 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+        env:
+          OUTPUT_FILE: ${{ steps.texra.outputs.output-file }}
