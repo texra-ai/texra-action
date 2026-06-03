@@ -1,0 +1,29 @@
+# On-demand analysis: run a TeXRA agent against the repository from the Actions
+# tab, writing its report to the workflow step summary.
+name: TeXRA On-Demand
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "What should TeXRA look at?"
+        required: true
+        default: "Summarize the riskiest parts of this repository."
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: texra
+        uses: texra-ai/texra-action@v1
+        with:
+          agent: review
+          prompt: ${{ inputs.prompt }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Publish report
+        run: cat "${{ steps.texra.outputs.output-file }}" >> "$GITHUB_STEP_SUMMARY"

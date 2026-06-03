@@ -1,0 +1,233 @@
+name: "TeXRA Agent"
+description: "Run a TeXRA tool-use agent in GitHub Actions — headless, with the agent's final message exposed as an output."
+author: "TeXRA"
+branding:
+  icon: "edit-3"
+  color: "purple"
+
+inputs:
+  # --- Instruction (provide exactly one of prompt / prompt-file) ---
+  prompt:
+    description: "Inline instruction for the agent (mapped to --instruction-file)."
+    required: false
+    default: ""
+  prompt-file:
+    description: "Path to a file containing the instruction."
+    required: false
+    default: ""
+  prompt-context:
+    description: "Inline runtime context appended to the instruction."
+    required: false
+    default: ""
+  prompt-context-file:
+    description: "Path to a file whose contents are appended as runtime context."
+    required: false
+    default: ""
+
+  # --- Agent & model ---
+  agent:
+    description: "Tool-use agent to run."
+    required: false
+    default: "review"
+  model:
+    description: "TeXRA model id (mapped to --model). Empty uses the agent default or TEXRA_MODEL."
+    required: false
+    default: ""
+
+  # --- Context the agent may read (mapped to repeatable --context) ---
+  context-files:
+    description: "Newline-separated list of read-only context files passed to the agent."
+    required: false
+    default: ""
+
+  # --- CLI control ---
+  texra-version:
+    description: "Version of @texra-ai/cli to install. Empty or 'latest' installs the latest published version; 'workspace' builds the local checkout."
+    required: false
+    default: ""
+  api-mode:
+    description: "TeXRA API mode. Use 'personal' in CI so provider API keys are used instead of a TeXRA login."
+    required: false
+    default: "personal"
+  approval-policy:
+    description: "Approval policy for privileged tool actions. Keep 'never' in CI for read-only safety."
+    required: false
+    default: "never"
+  working-directory:
+    description: "Repository directory the agent runs against (mapped to --cwd)."
+    required: false
+    default: ${{ github.workspace }}
+  output-format:
+    description: "CLI output format (json | ndjson | text)."
+    required: false
+    default: "json"
+  output-file:
+    description: "File where the final agent message is written. Empty writes under RUNNER_TEMP."
+    required: false
+    default: ""
+  cli-args:
+    description: "Extra args appended to the texra invocation. A value starting with '[' is parsed as a JSON array; otherwise it is split shell-style."
+    required: false
+    default: ""
+
+  # --- Authorization gate (opt-in) ---
+  require-write-access:
+    description: "When 'true', require the triggering actor to have repo write access (use for pull_request_target / mention triggers)."
+    required: false
+    default: "false"
+  allow-users:
+    description: "Comma-separated usernames allowed regardless of permission, or '*' for everyone."
+    required: false
+    default: ""
+  allow-bots:
+    description: "Comma-separated bot usernames allowed, or '*' for all bots. Empty allows none."
+    required: false
+    default: ""
+  github-token:
+    description: "Token used for the write-access check (and reused by review mode)."
+    required: false
+    default: ${{ github.token }}
+
+  # --- Provider API keys (forwarded to the CLI as <PROVIDER>_API_KEY) ---
+  anthropic-api-key:
+    description: "Anthropic API key."
+    required: false
+    default: ""
+  openai-api-key:
+    description: "OpenAI API key."
+    required: false
+    default: ""
+  deepseek-api-key:
+    description: "DeepSeek API key."
+    required: false
+    default: ""
+  google-api-key:
+    description: "Google API key."
+    required: false
+    default: ""
+  openrouter-api-key:
+    description: "OpenRouter API key."
+    required: false
+    default: ""
+  xai-api-key:
+    description: "xAI API key."
+    required: false
+    default: ""
+  moonshot-api-key:
+    description: "Moonshot API key."
+    required: false
+    default: ""
+  dashscope-api-key:
+    description: "DashScope (Qwen) API key."
+    required: false
+    default: ""
+  minimax-api-key:
+    description: "MiniMax API key."
+    required: false
+    default: ""
+  glm-api-key:
+    description: "GLM (Zhipu) API key."
+    required: false
+    default: ""
+
+outputs:
+  final-message:
+    description: "The agent's final message."
+    value: ${{ steps.parse.outputs.final-message }}
+  output-file:
+    description: "Path to the file containing the final message."
+    value: ${{ steps.parse.outputs.output-file }}
+  result-json:
+    description: "Path to the raw TeXRA JSON result."
+    value: ${{ steps.run.outputs.result-json }}
+  structured-output:
+    description: "JSON object extracted from the final message, when present."
+    value: ${{ steps.parse.outputs.structured-output }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: "1.3.14"
+        token: ${{ inputs.github-token || github.token }}
+
+    - name: Ensure Node.js available
+      uses: actions/setup-node@v6
+      with:
+        node-version: "24"
+        package-manager-cache: false
+
+    - name: Install action dependencies
+      shell: bash
+      run: |
+        cd "${GITHUB_ACTION_PATH}"
+        bun install --production --frozen-lockfile
+
+    - name: Check repository write access
+      if: ${{ inputs.require-write-access == 'true' }}
+      shell: bash
+      env:
+        INPUTS: ${{ toJson(inputs) }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/src/main.ts" check-write-access
+
+    - name: Install TeXRA CLI
+      shell: bash
+      env:
+        TEXRA_VERSION: ${{ inputs.texra-version }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        if [ "$TEXRA_VERSION" = "workspace" ]; then
+          working_directory="${INPUT_WORKING_DIRECTORY:-$GITHUB_WORKSPACE}"
+          working_directory="$(cd "$working_directory" && pwd)"
+          cd "$working_directory"
+          corepack enable
+          corepack pnpm install --frozen-lockfile
+          corepack pnpm --filter @texra-ai/cli run build
+          node packages/cli/dist/bin/texra.js version
+          exit 0
+        fi
+        package='@texra-ai/cli'
+        if [ -n "$TEXRA_VERSION" ] && [ "$TEXRA_VERSION" != "latest" ]; then
+          package="${package}@${TEXRA_VERSION}"
+        fi
+        npm install -g "$package"
+        texra version
+
+    - name: Resolve prompt
+      id: prompt
+      shell: bash
+      env:
+        INPUTS: ${{ toJson(inputs) }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/src/main.ts" resolve-prompt
+
+    - name: Run TeXRA
+      id: run
+      shell: bash
+      env:
+        INPUTS: ${{ toJson(inputs) }}
+        TEXRA_WORKING_DIRECTORY: ${{ steps.prompt.outputs.working-directory }}
+        TEXRA_PROMPT_RELATIVE: ${{ steps.prompt.outputs.prompt-relative }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/src/main.ts" run-agent
+
+    - name: Parse result
+      id: parse
+      shell: bash
+      env:
+        INPUTS: ${{ toJson(inputs) }}
+        RESULT_JSON: ${{ steps.run.outputs.result-json }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/src/main.ts" parse-result

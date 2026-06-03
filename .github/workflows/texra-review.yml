@@ -1,0 +1,34 @@
+# Dogfood: review this repository's own pull requests with the local review
+# action. Inert until a maintainer sets the TEXRA_REVIEW_ENABLED variable and an
+# ANTHROPIC_API_KEY secret.
+name: TeXRA Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: texra-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: ${{ vars.TEXRA_REVIEW_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./review
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
+          github-token: ${{ secrets.TEXRA_REVIEW_GITHUB_TOKEN || github.token }}
+          resolve-threads: ${{ secrets.TEXRA_REVIEW_GITHUB_TOKEN != '' }}

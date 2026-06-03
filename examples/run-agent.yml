@@ -1,0 +1,40 @@
+# Generic core action: run any TeXRA tool-use agent and consume its output.
+# Demonstrates capturing the final message and the extracted structured-output.
+name: TeXRA Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Instruction for the agent"
+        required: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: texra
+        uses: texra-ai/texra-action@v1
+        with:
+          agent: review
+          prompt: ${{ inputs.task }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Pass extra CLI flags (JSON array or shell string):
+          # cli-args: '["--max-turns","20"]'
+
+      - name: Use the result
+        env:
+          FINAL_MESSAGE: ${{ steps.texra.outputs.final-message }}
+          STRUCTURED: ${{ steps.texra.outputs.structured-output }}
+        run: |
+          echo "Final message:"
+          echo "$FINAL_MESSAGE"
+          # structured-output is the JSON object embedded in the final message
+          # (empty when the agent did not emit JSON).
+          if [ -n "$STRUCTURED" ]; then
+            echo "Structured output: $STRUCTURED"
+          fi

@@ -1,0 +1,44 @@
+# TeXRA review with a repository-specific prompt and a path filter, plus a
+# dedicated token so previous review threads can be resolved/replied to.
+name: TeXRA Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+    paths:
+      - "src/**"
+      - "**/*.tex"
+
+concurrency:
+  group: texra-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Skip entirely when no provider key is configured.
+    if: ${{ vars.TEXRA_REVIEW_ENABLED != 'false' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: texra-ai/texra-action/review@v1
+        with:
+          # Your own prompt, kept in the repository.
+          prompt-file: .github/prompts/texra-code-review-prompt.md
+          model: ${{ vars.TEXRA_REVIEW_MODEL }}
+          # A dedicated bot token enables thread reply / resolve / unresolve.
+          github-token: ${{ secrets.TEXRA_REVIEW_GITHUB_TOKEN || github.token }}
+          resolve-threads: ${{ secrets.TEXRA_REVIEW_GITHUB_TOKEN != '' }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          google-api-key: ${{ secrets.GOOGLE_API_KEY }}
+          openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}
+          xai-api-key: ${{ secrets.XAI_API_KEY }}
