@@ -1,70 +1,40 @@
 import * as core from "@actions/core";
-import { context, errorMessage, makeOctokit } from "../lib/octokit";
-
-function parseList(value: string | undefined): string[] {
-  return (value ?? "")
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
+import { context, makeOctokit } from "../lib/octokit";
+import { ensureActorHasWriteAccess } from "../lib/writeAccess";
 
 /**
  * Optional authorization gate (enabled via `require-write-access`). Requires the
- * triggering actor to have repo write access unless explicitly allow-listed.
- * Mirrors codex-action's `check-write-access` so the action cannot be summoned
- * to spend provider credits by an untrusted actor (e.g. via pull_request_target).
+ * triggering actor to have repo write access unless explicitly allow-listed, so
+ * the action cannot be summoned to spend provider credits by an untrusted actor
+ * (e.g. via pull_request_target). Robust resolution lives in `../lib/writeAccess`.
  */
 export async function run(): Promise<void> {
   const token = process.env.GITHUB_TOKEN ?? "";
-  const allowUsers = parseList(process.env.ALLOW_USERS);
-  const allowBots = (process.env.ALLOW_BOTS ?? "").trim();
-  const actor = context.actor;
+  const octokit = token ? makeOctokit(token) : null;
 
-  if (allowUsers.includes("*") || allowUsers.includes(actor)) {
-    core.info(`Actor ${actor} is explicitly allow-listed.`);
+  const result = await ensureActorHasWriteAccess({
+    actor: context.actor,
+    allowUsers: process.env.ALLOW_USERS ?? "",
+    allowBots: process.env.ALLOW_BOTS ?? "",
+    fetchPermission: async (username) => {
+      if (!octokit) {
+        throw new Error(
+          "a github-token is required to verify write access (none was provided).",
+        );
+      }
+      const { data } = await octokit.rest.repos.getCollaboratorPermissionLevel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        username,
+      });
+      return data.permission ?? "none";
+    },
+  });
+
+  if (result.status === "approved") {
+    core.info(`Actor ${result.actor} ${result.reason}`);
     return;
   }
-
-  const isBot =
-    actor.endsWith("[bot]") || context.payload.sender?.type === "Bot";
-  if (isBot) {
-    const bots = parseList(allowBots);
-    if (allowBots === "*" || bots.includes(actor)) {
-      core.info(`Bot actor ${actor} is allow-listed.`);
-      return;
-    }
-    core.setFailed(
-      `Bot actor ${actor} is not in allow-bots; refusing to run TeXRA.`,
-    );
-    process.exit(1);
-  }
-
-  if (!token) {
-    core.setFailed(
-      "require-write-access is enabled but no github-token was provided to verify permissions.",
-    );
-    process.exit(1);
-  }
-
-  try {
-    const octokit = makeOctokit(token);
-    const { data } = await octokit.rest.repos.getCollaboratorPermissionLevel({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      username: actor,
-    });
-    if (data.permission === "admin" || data.permission === "write") {
-      core.info(`Actor ${actor} has ${data.permission} access.`);
-      return;
-    }
-    core.setFailed(
-      `Actor ${actor} has '${data.permission}' access; write access is required. Add them to allow-users to override.`,
-    );
-    process.exit(1);
-  } catch (error) {
-    core.setFailed(
-      `Could not verify write access for ${actor}: ${errorMessage(error)}`,
-    );
-    process.exit(1);
-  }
+  core.setFailed(`Actor ${result.actor} ${result.reason}`);
+  process.exit(1);
 }
