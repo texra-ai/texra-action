@@ -1,5 +1,5 @@
 name: "TeXRA Agent"
-description: "Run a TeXRA tool-use agent in GitHub Actions — headless, with the agent's final message exposed as an output."
+description: "Run a TeXRA tool-use agent in GitHub Actions, headless, with the agent's final message exposed as an output."
 author: "TeXRA"
 branding:
   icon: "edit-3"

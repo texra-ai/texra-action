@@ -2,8 +2,8 @@
 
 The repository ships two actions:
 
-- **`texra-ai/texra-action@v1`** — a generic runner for any TeXRA tool-use agent.
-- **`texra-ai/texra-action/review@v1`** — review mode, which wraps the runner
+- **`texra-ai/texra-action@v1`**: a generic runner for any TeXRA tool-use agent.
+- **`texra-ai/texra-action/review@v1`**: review mode, which wraps the runner
   with diff preparation and pull-request posting.
 
 Both install `@texra-ai/cli` and run `texra agents run`. They differ only in the
@@ -13,8 +13,8 @@ surrounding steps.
 
 Provide exactly one of:
 
-- `prompt` — an inline instruction string.
-- `prompt-file` — a path to an instruction file in the checked-out repository.
+- `prompt`: an inline instruction string.
+- `prompt-file`: a path to an instruction file in the checked-out repository.
 
 Additional context can be appended with `prompt-context` (inline) or
 `prompt-context-file` (a path). Read-only files the agent should consult are

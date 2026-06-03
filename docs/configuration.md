@@ -45,7 +45,7 @@ Each provider has a built-in default short-id (e.g. `deepseekproT`, `opus48T`,
 `gpt55`, `gemini31p`, `kimi26T`, `qwenplus`, `minimaxM27`, `glm51`). Override
 them:
 
-- Per provider, via `model-defaults` — a JSON map, e.g.
+- Per provider, via `model-defaults`, a JSON map. For example,
   `model-defaults: '{"anthropic":"opus48T","openai":"gpt55"}'`.
 - Globally, by setting `model` to a specific short-id.
 
