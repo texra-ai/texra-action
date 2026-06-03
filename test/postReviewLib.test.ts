@@ -1,8 +1,13 @@
 import { describe, expect, it } from "bun:test";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   fallbackItems,
   formatReviewComment,
   isCommentable,
+  loadCommentableLines,
+  loadKnownThreadStates,
   markedBody,
   reviewAttributionFooter,
   type CommentableMap,
@@ -102,5 +107,39 @@ describe("fallbackItems / footer", () => {
       reviewAttributionFooter({ agent: "review", model: "opus48T" }),
     ).toContain("agent `review` with model `opus48T`");
     expect(reviewAttributionFooter({})).toBe("");
+  });
+});
+
+describe("loadCommentableLines / loadKnownThreadStates resilience", () => {
+  const dir = mkdtempSync(join(tmpdir(), "texra-action-test-"));
+
+  it("returns null for an absent file", () => {
+    expect(loadCommentableLines(join(dir, "missing.json"))).toBeNull();
+    expect(loadKnownThreadStates(join(dir, "missing.json"))).toBeNull();
+  });
+
+  it("returns null for malformed JSON instead of throwing", () => {
+    const bad = join(dir, "bad.json");
+    writeFileSync(bad, "{ not valid json");
+    expect(loadCommentableLines(bad)).toBeNull();
+    expect(loadKnownThreadStates(bad)).toBeNull();
+  });
+
+  it("parses valid anchors and thread states", () => {
+    const anchors = join(dir, "anchors.json");
+    writeFileSync(
+      anchors,
+      JSON.stringify({
+        files: [{ path: "a.ts", right: [{ start: 2, end: 3 }], left: [] }],
+      }),
+    );
+    expect(loadCommentableLines(anchors)?.get("a.ts")?.RIGHT.has(3)).toBe(true);
+
+    const threads = join(dir, "threads.json");
+    writeFileSync(
+      threads,
+      JSON.stringify({ threads: [{ id: "T1", isResolved: true }] }),
+    );
+    expect(loadKnownThreadStates(threads)?.get("T1")?.isResolved).toBe(true);
   });
 });

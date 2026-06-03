@@ -19,14 +19,23 @@ function expandRanges(ranges: unknown): Set<number> {
   return result;
 }
 
-/** Load the commentable-line anchors written by `prepare-diff`, or null. */
+/**
+ * Load the commentable-line anchors written by `prepare-diff`. Returns null when
+ * the file is absent or unreadable/malformed — inline validation is best-effort,
+ * so a corrupt anchors file should not fail the review.
+ */
 export function loadCommentableLines(
   anchorPath: string,
 ): CommentableMap | null {
   if (!existsSync(anchorPath)) return null;
-  const payload = JSON.parse(readFileSync(anchorPath, "utf8")) as {
+  let payload: {
     files?: Array<{ path?: string; left?: unknown; right?: unknown }>;
   };
+  try {
+    payload = JSON.parse(readFileSync(anchorPath, "utf8"));
+  } catch {
+    return null;
+  }
   const files: CommentableMap = new Map();
   for (const file of Array.isArray(payload.files) ? payload.files : []) {
     if (!file.path) continue;
@@ -146,9 +155,13 @@ export function loadKnownThreadStates(
   threadContextPath: string,
 ): Map<string, ThreadState> | null {
   if (!existsSync(threadContextPath)) return null;
-  const payload = JSON.parse(readFileSync(threadContextPath, "utf8")) as {
-    threads?: Array<{ id?: unknown; isResolved?: unknown }>;
-  };
+  let payload: { threads?: Array<{ id?: unknown; isResolved?: unknown }> };
+  try {
+    payload = JSON.parse(readFileSync(threadContextPath, "utf8"));
+  } catch {
+    // Thread actions are optional; a corrupt context file should not block posting.
+    return null;
+  }
   const threads = new Map<string, ThreadState>();
   for (const thread of Array.isArray(payload.threads) ? payload.threads : []) {
     if (typeof thread.id === "string" && thread.id.trim()) {

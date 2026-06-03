@@ -42,8 +42,10 @@ function ranges(values: Iterable<number>): LineRange[] {
 
 /**
  * Parse a unified diff into the set of lines that accept inline review comments.
- * RIGHT anchors are added/context lines on the head; LEFT anchors are removed
- * base lines. Mirrors how GitHub validates `line`/`side` for review comments.
+ * Only changed lines are anchored: RIGHT anchors are added (`+`) head lines and
+ * LEFT anchors are removed (`-`) base lines. Unchanged context lines advance the
+ * counters but are deliberately not made commentable, keeping comments on the
+ * actual diff. Mirrors how GitHub validates `line`/`side` for review comments.
  */
 export function parseCommentableLines(diffText: string): CommentableLines {
   const anchors: Anchors = new Map();

@@ -25,7 +25,16 @@ export async function run(): Promise<void> {
   const workingDirectoryInput = (
     process.env.INPUT_WORKING_DIRECTORY ?? ""
   ).trim();
-  const workingDirectory = realpathSync(workingDirectoryInput || workspace);
+  const requestedDirectory = workingDirectoryInput || workspace;
+  let workingDirectory: string;
+  try {
+    workingDirectory = realpathSync(requestedDirectory);
+  } catch {
+    core.setFailed(
+      `working-directory does not exist or is not accessible: ${requestedDirectory}`,
+    );
+    process.exit(1);
+  }
 
   let prompt = process.env.INPUT_PROMPT ?? "";
   const promptFile = (process.env.INPUT_PROMPT_FILE ?? "").trim();
