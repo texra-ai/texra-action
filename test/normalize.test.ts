@@ -127,3 +127,23 @@ describe("normalizeReview", () => {
     ).toHaveLength(50);
   });
 });
+
+describe("schema coercion edge cases", () => {
+  it("drops an invalid side and defaults to RIGHT", () => {
+    expect(
+      normalizeModelComment({ path: "a.ts", body: "x", line: 1, side: "MID" }),
+    ).toEqual({ path: "a.ts", body: "x", line: 1, side: "RIGHT" });
+  });
+
+  it("drops a comment whose line is non-integer and has no position", () => {
+    expect(
+      normalizeModelComment({ path: "a.ts", body: "x", line: 4.5 }),
+    ).toBeUndefined();
+  });
+
+  it("trims a whitespaced action kind", () => {
+    expect(
+      normalizeThreadAction({ action: " resolve ", thread_id: "T1" }),
+    ).toEqual({ action: "resolve", thread_id: "T1" });
+  });
+});

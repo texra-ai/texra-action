@@ -15,7 +15,8 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "string-argv": "^0.3.2"
+    "string-argv": "^0.3.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14",

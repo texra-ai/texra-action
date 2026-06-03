@@ -1,24 +1,9 @@
 import { parseModelJson } from "../lib/parseModelJson";
-import type {
-  ReviewComment,
-  ReviewPayload,
-  Side,
-  ThreadAction,
-  ThreadActionKind,
-} from "./types";
+import { ReviewCommentSchema, ThreadActionSchema } from "./schema";
+import type { ReviewComment, ReviewPayload, ThreadAction } from "./types";
 
 export const DEFAULT_REVIEW_BODY =
   "TeXRA completed without a final review message.";
-
-function integerOrUndefined(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isInteger(value)
-    ? value
-    : undefined;
-}
-
-function sideOrUndefined(value: unknown): Side | undefined {
-  return value === "LEFT" || value === "RIGHT" ? value : undefined;
-}
 
 function stringOrUndefined(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -31,46 +16,15 @@ function asArray(value: unknown): unknown[] {
 export function normalizeModelComment(
   comment: unknown,
 ): ReviewComment | undefined {
-  if (!comment || typeof comment !== "object") return undefined;
-  const raw = comment as Record<string, unknown>;
-  const pathValue = stringOrUndefined(raw.path);
-  const body = stringOrUndefined(raw.body);
-  const line = integerOrUndefined(raw.line);
-  const position = integerOrUndefined(raw.position);
-  if (!pathValue || !body || (line == null && position == null)) {
-    return undefined;
-  }
-
-  const normalized: ReviewComment = { path: pathValue, body };
-  if (line != null) {
-    normalized.line = line;
-    normalized.side = sideOrUndefined(raw.side) ?? "RIGHT";
-    const startLine = integerOrUndefined(raw.start_line ?? raw.startLine);
-    if (startLine != null) normalized.start_line = startLine;
-    const startSide = sideOrUndefined(raw.start_side ?? raw.startSide);
-    if (startSide) normalized.start_side = startSide;
-  } else {
-    normalized.position = position;
-  }
-  return normalized;
+  const result = ReviewCommentSchema.safeParse(comment);
+  return result.success ? result.data : undefined;
 }
 
 export function normalizeThreadAction(
   action: unknown,
 ): ThreadAction | undefined {
-  if (!action || typeof action !== "object") return undefined;
-  const raw = action as Record<string, unknown>;
-  const kind = stringOrUndefined(raw.action) as ThreadActionKind | undefined;
-  const threadId = stringOrUndefined(raw.thread_id ?? raw.threadId);
-  if (
-    !threadId ||
-    (kind !== "reply" && kind !== "resolve" && kind !== "unresolve")
-  ) {
-    return undefined;
-  }
-  const body = stringOrUndefined(raw.body);
-  if (kind === "reply" && !body) return undefined;
-  return { action: kind, thread_id: threadId, ...(body ? { body } : {}) };
+  const result = ThreadActionSchema.safeParse(action);
+  return result.success ? result.data : undefined;
 }
 
 export function dedupeThreadActions(actions: ThreadAction[]): ThreadAction[] {
