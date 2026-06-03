@@ -39,9 +39,9 @@ function isBotActor(actor: string): boolean {
 function isNotFoundError(error: unknown): boolean {
   return Boolean(
     error &&
-      typeof error === "object" &&
-      "status" in error &&
-      (error as { status?: number }).status === 404,
+    typeof error === "object" &&
+    "status" in error &&
+    (error as { status?: number }).status === 404,
   );
 }
 
