@@ -26,6 +26,13 @@ CLI (and, for review mode, the model-resolution step).
 `api-mode` defaults to `personal`, which makes the CLI use the provider keys
 above rather than a TeXRA login. Keep `personal` in CI.
 
+## Approval policy
+
+`approval-policy` defaults to `yolo`: the agent has the bash tool and unrestricted
+tool calls and runs shell commands in the runner. Set it to `never` for a
+read-only run (read/search tools only; bash and write/edit denied). See
+[security](./security.md) for which to choose on a given trigger.
+
 ## Model selection (review mode)
 
 When `model` is empty, the review action picks a default model from the first

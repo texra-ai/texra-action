@@ -22,7 +22,7 @@ const RawInputsSchema = z
     "context-files": str(),
     "texra-version": str(),
     "api-mode": str("personal"),
-    "approval-policy": str("never"),
+    "approval-policy": str("yolo"),
     "working-directory": str(),
     "output-format": str("json"),
     "output-file": str(),

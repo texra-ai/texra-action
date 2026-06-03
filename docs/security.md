@@ -1,14 +1,26 @@
 # Security
 
-## Read-only by construction
+## Capability model
 
-The action runs the agent with `--api-mode personal --approval-policy never`.
-In the non-interactive runner there is no approval handler, so every privileged
-tool action (edit, write, shell with side effects) is denied. The agent can read
-and reason over the pull request, but cannot modify the repository, push, or
-open branches.
+By default the action runs the agent with `--api-mode personal --approval-policy
+yolo`. Under `yolo` every tool action is auto-approved: the agent has the **bash
+tool** and unrestricted tool calls, and runs arbitrary shell commands in the
+runner with the same privileges as any other step in the job. The agent never
+holds a GitHub token — it emits a JSON review that the action posts — but within
+the runner it is unrestricted.
 
-Keep `approval-policy: never`. Do not grant the agent write tools via `cli-args`.
+Because `yolo` executes untrusted-PR-influenced code, the **fork no-op below is
+load-bearing**: on `pull_request` from a fork GitHub exposes no repository
+secret, so the run no-ops before the agent starts (no provider key, no model
+call). Unrestricted runs therefore only happen when a provider key is available —
+same-repo PRs, or contexts you opt into. If you wire this action onto a trigger
+that exposes secrets to untrusted actors, either enable the authorization gate
+(below) or run read-only:
+
+```yaml
+with:
+  approval-policy: never # read/search tools only; bash and write/edit denied
+```
 
 ## Untrusted input
 
