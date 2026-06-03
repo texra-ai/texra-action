@@ -193,9 +193,6 @@ runs:
     - name: Prepare PR diff and commentable lines
       id: diff
       shell: bash
-      env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -216,18 +213,7 @@ runs:
       id: context
       shell: bash
       env:
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        REPOSITORY: ${{ github.repository }}
-        REPOSITORY_OWNER: ${{ github.repository_owner }}
-        REPOSITORY_NAME: ${{ github.event.repository.name }}
-        PR_TITLE_JSON: ${{ toJSON(github.event.pull_request.title) }}
-        PR_BODY_JSON: ${{ toJSON(github.event.pull_request.body) }}
-        BASE_REF: ${{ github.event.pull_request.base.ref }}
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        TRIGGER_EVENT: ${{ github.event.action }}
-        REVIEW_MODE: external
+        # PR metadata is read natively from the @actions/github event context.
         TEXRA_REVIEW_MODEL: ${{ steps.model.outputs.model }}
         REVIEW_CONTEXT_FILE: ${{ steps.diff.outputs.diff-file }}
         COMMENTABLE_LINES_FILE: ${{ steps.diff.outputs.commentable-lines-md }}
@@ -313,7 +299,6 @@ runs:
         TEXRA_RESOLVE_THREADS: ${{ inputs.resolve-threads }}
         TEXRA_REVIEW_AGENT: ${{ inputs.agent }}
         TEXRA_REVIEW_MODEL: ${{ steps.model.outputs.model }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \

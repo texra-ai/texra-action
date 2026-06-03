@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { context, makeOctokit } from "../lib/octokit";
+import { context, makeOctokit, pullRequest } from "../lib/octokit";
 import { collectTexraThreads } from "../review/collectThreads";
 
 /** Gather previous TeXRA review threads on the PR for the agent to reason over. */
@@ -11,7 +11,7 @@ export async function run(): Promise<void> {
   const outputPath =
     process.env.TEXRA_THREADS_OUTPUT ||
     ".texra-action/previous-texra-review-threads.json";
-  const prNumber = context.payload.pull_request?.number;
+  const prNumber = pullRequest()?.number;
 
   if (!token || prNumber == null) {
     core.warning(

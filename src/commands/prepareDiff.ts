@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { pullRequest } from "../lib/octokit";
 import { parseCommentableLines, toMarkdown } from "../review/commentableLines";
 
 /**
@@ -11,8 +12,9 @@ import { parseCommentableLines, toMarkdown } from "../review/commentableLines";
  */
 export async function run(): Promise<void> {
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
-  const baseSha = (process.env.BASE_SHA || "").trim();
-  const headSha = (process.env.HEAD_SHA || "").trim();
+  const pr = pullRequest();
+  const baseSha = (pr?.base?.sha ?? "").trim();
+  const headSha = (pr?.head?.sha ?? "").trim();
   const diffFile = process.env.TEXRA_DIFF_FILE || ".texra-action/pr.diff";
   const commentableJson =
     process.env.TEXRA_COMMENTABLE_LINES_JSON ||
@@ -22,7 +24,9 @@ export async function run(): Promise<void> {
     ".texra-action/commentable-lines.md";
 
   if (!baseSha || !headSha) {
-    core.setFailed("prepare-diff requires BASE_SHA and HEAD_SHA.");
+    core.setFailed(
+      "prepare-diff requires a pull_request event context with base and head SHAs.",
+    );
     process.exit(1);
   }
 

@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { readFileSync } from "node:fs";
-import { context, makeOctokit } from "../lib/octokit";
+import { context, makeOctokit, pullRequest } from "../lib/octokit";
 import { postTexraReview } from "../review/postReview";
 import type { ReviewPayload } from "../review/types";
 
@@ -8,9 +8,9 @@ import type { ReviewPayload } from "../review/types";
 export async function run(): Promise<void> {
   const token = process.env.GITHUB_TOKEN || "";
   const reviewJsonPath = process.env.TEXRA_REVIEW_JSON || "";
-  const prNumber = context.payload.pull_request?.number;
+  const pr = pullRequest();
 
-  if (!token || !reviewJsonPath || prNumber == null) {
+  if (!token || !reviewJsonPath || pr?.number == null) {
     core.setFailed(
       "post-review requires a github-token, a review-json file, and a pull_request context.",
     );
@@ -26,9 +26,8 @@ export async function run(): Promise<void> {
     octokit,
     owner: context.repo.owner,
     repo: context.repo.repo,
-    pullNumber: prNumber,
-    headSha:
-      process.env.HEAD_SHA || context.payload.pull_request?.head?.sha || "",
+    pullNumber: pr.number,
+    headSha: pr.head?.sha ?? "",
     review,
     marker: process.env.TEXRA_REVIEW_MARKER || "<!-- texra-review -->",
     commentableLinesJsonPath:

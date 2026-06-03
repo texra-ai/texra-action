@@ -1,33 +1,43 @@
 /**
- * Render the runtime context block appended to the review prompt.
- *
- * PR title and body are labelled "(untrusted)" so the agent knows to treat them
- * as data, not instructions. Values are read from environment variables the
- * review action sets from the workflow's GitHub event payload.
+ * Render the runtime-context block appended to the review prompt. Values are
+ * supplied as a structured object (sourced from `@actions/github` context by the
+ * command layer) rather than read from ad-hoc environment variables. PR title
+ * and body are labelled "(untrusted)" so the agent treats them as data.
  */
-export const PROMPT_CONTEXT_FIELDS: Array<[label: string, envVar: string]> = [
-  ["PR number", "PR_NUMBER"],
-  ["Repository", "REPOSITORY"],
-  ["Repository owner", "REPOSITORY_OWNER"],
-  ["Repository name", "REPOSITORY_NAME"],
-  ["Pull request title JSON (untrusted)", "PR_TITLE_JSON"],
-  ["Pull request body JSON (untrusted)", "PR_BODY_JSON"],
-  ["Base ref", "BASE_REF"],
-  ["Base SHA", "BASE_SHA"],
-  ["Head ref", "HEAD_REF"],
-  ["Head SHA", "HEAD_SHA"],
-  ["Trigger event", "TRIGGER_EVENT"],
-  ["Review mode", "REVIEW_MODE"],
-  ["TeXRA review model", "TEXRA_REVIEW_MODEL"],
+export interface PromptContextFields {
+  prNumber: string;
+  repository: string;
+  repositoryOwner: string;
+  repositoryName: string;
+  prTitleJson: string;
+  prBodyJson: string;
+  baseRef: string;
+  baseSha: string;
+  headRef: string;
+  headSha: string;
+  triggerEvent: string;
+  reviewMode: string;
+  reviewModel: string;
+}
+
+const FIELD_LABELS: Array<[key: keyof PromptContextFields, label: string]> = [
+  ["prNumber", "PR number"],
+  ["repository", "Repository"],
+  ["repositoryOwner", "Repository owner"],
+  ["repositoryName", "Repository name"],
+  ["prTitleJson", "Pull request title JSON (untrusted)"],
+  ["prBodyJson", "Pull request body JSON (untrusted)"],
+  ["baseRef", "Base ref"],
+  ["baseSha", "Base SHA"],
+  ["headRef", "Head ref"],
+  ["headSha", "Head SHA"],
+  ["triggerEvent", "Trigger event"],
+  ["reviewMode", "Review mode"],
+  ["reviewModel", "TeXRA review model"],
 ];
 
-export function promptContextText(
-  env: NodeJS.ProcessEnv = process.env,
-): string {
-  const lines = PROMPT_CONTEXT_FIELDS.map(
-    ([label, name]) => `${label}: ${env[name] ?? ""}`,
-  );
-  return `${lines.join("\n")}\n`;
+export function promptContextText(fields: PromptContextFields): string {
+  return `${FIELD_LABELS.map(([key, label]) => `${label}: ${fields[key]}`).join("\n")}\n`;
 }
 
 /**
@@ -35,19 +45,21 @@ export function promptContextText(
  * review prompt can name the diff, commentable-line anchors, and previous
  * threads explicitly. Only non-empty paths are listed.
  */
-export const PROMPT_CONTEXT_FILE_FIELDS: Array<
-  [label: string, envVar: string]
-> = [
-  ["Review context file", "REVIEW_CONTEXT_FILE"],
-  ["Commentable line anchors file", "COMMENTABLE_LINES_FILE"],
-  ["Previous TeXRA review threads file", "REVIEW_THREAD_CONTEXT_FILE"],
+export interface ContextFileRefs {
+  reviewContextFile?: string;
+  commentableLinesFile?: string;
+  reviewThreadContextFile?: string;
+}
+
+const FILE_REF_LABELS: Array<[key: keyof ContextFileRefs, label: string]> = [
+  ["reviewContextFile", "Review context file"],
+  ["commentableLinesFile", "Commentable line anchors file"],
+  ["reviewThreadContextFile", "Previous TeXRA review threads file"],
 ];
 
-export function fileReferencesText(
-  env: NodeJS.ProcessEnv = process.env,
-): string {
-  const lines = PROMPT_CONTEXT_FILE_FIELDS.filter(([, name]) =>
-    (env[name] ?? "").trim(),
-  ).map(([label, name]) => `${label}: \`${env[name]}\``);
+export function fileReferencesText(refs: ContextFileRefs): string {
+  const lines = FILE_REF_LABELS.filter(([key]) => (refs[key] ?? "").trim()).map(
+    ([key, label]) => `${label}: \`${refs[key]}\``,
+  );
   return lines.length ? `${lines.join("\n")}\n` : "";
 }
