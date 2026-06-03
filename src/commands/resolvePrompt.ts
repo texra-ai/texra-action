@@ -7,13 +7,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, relative, sep } from "node:path";
-
-function splitLines(value: string | undefined): string[] {
-  return (value ?? "")
-    .split(/\r?\n/)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
+import { splitLines } from "../lib/lines";
 
 /**
  * Assemble the instruction file the agent runs against: the prompt (inline or

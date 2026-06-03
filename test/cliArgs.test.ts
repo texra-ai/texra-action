@@ -19,11 +19,23 @@ describe("parseCliArgs", () => {
     ]);
   });
 
-  it("respects quotes", () => {
+  it("respects double quotes", () => {
     expect(parseCliArgs('--note "hello world" --flag')).toEqual([
       "--note",
       "hello world",
       "--flag",
     ]);
+  });
+
+  it("respects single quotes and collapses extra whitespace", () => {
+    expect(parseCliArgs("  --note 'hello world'   --flag  ")).toEqual([
+      "--note",
+      "hello world",
+      "--flag",
+    ]);
+  });
+
+  it("falls back to shell-splitting a malformed JSON-array value", () => {
+    expect(parseCliArgs("[broken --flag")).toEqual(["[broken", "--flag"]);
   });
 });

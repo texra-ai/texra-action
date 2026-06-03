@@ -3,13 +3,7 @@ import { spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseCliArgs } from "../lib/cliArgs";
-
-function splitLines(value: string | undefined): string[] {
-  return (value ?? "")
-    .split(/\r?\n/)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
+import { splitLines } from "../lib/lines";
 
 /**
  * Run `texra agents run <agent> ... --output-format json --print`, capturing the
