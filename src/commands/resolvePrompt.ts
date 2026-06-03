@@ -9,6 +9,7 @@ import {
 import { join, relative, sep } from "node:path";
 import { readInputs } from "../lib/inputs";
 import { splitLines } from "../lib/lines";
+import { workspaceDir } from "../lib/runnerEnv";
 
 /**
  * Assemble the instruction file the agent runs against: the prompt (inline or
@@ -21,7 +22,7 @@ import { splitLines } from "../lib/lines";
  */
 export async function run(): Promise<void> {
   const inputs = readInputs();
-  const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
+  const workspace = workspaceDir();
   const requestedDirectory = inputs.workingDirectory.trim() || workspace;
   let workingDirectory: string;
   try {

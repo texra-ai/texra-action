@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { trimToUndefined } from "../lib/text";
 import type { ReviewComment, ThreadAction } from "./types";
 
 /**
@@ -9,16 +10,10 @@ import type { ReviewComment, ThreadAction } from "./types";
  */
 
 /** Trimmed non-empty string, else undefined. */
-const optText = z.preprocess(
-  (v) => (typeof v === "string" && v.trim() ? v.trim() : undefined),
-  z.string().optional(),
-);
+const optText = z.preprocess(trimToUndefined, z.string().optional());
 
 /** Required trimmed non-empty string (failure drops the item). */
-const reqText = z.preprocess(
-  (v) => (typeof v === "string" && v.trim() ? v.trim() : undefined),
-  z.string(),
-);
+const reqText = z.preprocess(trimToUndefined, z.string());
 
 /** Integer, else undefined. */
 const optInt = z.preprocess(

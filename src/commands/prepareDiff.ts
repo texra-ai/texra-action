@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { pullRequest } from "../lib/octokit";
+import { workspaceDir } from "../lib/runnerEnv";
 import { parseCommentableLines, toMarkdown } from "../review/commentableLines";
 
 /**
@@ -11,7 +12,7 @@ import { parseCommentableLines, toMarkdown } from "../review/commentableLines";
  * (`fetch-depth: 0`) so the merge base is reachable.
  */
 export async function run(): Promise<void> {
-  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  const workspace = workspaceDir();
   const pr = pullRequest();
   const baseSha = (pr?.base?.sha ?? "").trim();
   const headSha = (pr?.head?.sha ?? "").trim();

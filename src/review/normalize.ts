@@ -1,13 +1,10 @@
 import { parseModelJson } from "../lib/parseModelJson";
+import { trimToUndefined } from "../lib/text";
 import { ReviewCommentSchema, ThreadActionSchema } from "./schema";
 import type { ReviewComment, ReviewPayload, ThreadAction } from "./types";
 
 export const DEFAULT_REVIEW_BODY =
   "TeXRA completed without a final review message.";
-
-function stringOrUndefined(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
 
 function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
@@ -52,8 +49,8 @@ export function normalizeReview(rawText: string): ReviewPayload {
 
   const payload = modelPayload as Record<string, unknown>;
   const body =
-    stringOrUndefined(payload.body) ??
-    stringOrUndefined(payload.summary) ??
+    trimToUndefined(payload.body) ??
+    trimToUndefined(payload.summary) ??
     DEFAULT_REVIEW_BODY;
   const comments = asArray(payload.comments)
     .map(normalizeModelComment)

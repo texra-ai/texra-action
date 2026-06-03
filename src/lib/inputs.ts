@@ -59,7 +59,7 @@ export const ActionInputsSchema = RawInputsSchema.transform((raw) => ({
   requireWriteAccess: raw["require-write-access"] === "true",
   allowUsers: raw["allow-users"],
   allowBots: raw["allow-bots"],
-  providerKeys: providerKeysFromInputs(raw as Record<string, string>),
+  providerKeys: providerKeysFromInputs(raw),
 }));
 
 export type ActionInputs = z.infer<typeof ActionInputsSchema>;

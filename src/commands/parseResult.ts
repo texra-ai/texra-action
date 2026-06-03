@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { loadCliResult } from "../lib/cliResult";
 import { readInputs } from "../lib/inputs";
 import { parseModelJson } from "../lib/parseModelJson";
+import { runnerTemp } from "../lib/runnerEnv";
 
 /**
  * Generic result parser for the core action: surface the agent's final message,
@@ -12,12 +13,11 @@ import { parseModelJson } from "../lib/parseModelJson";
  */
 export async function run(): Promise<void> {
   const resultJson = process.env.RESULT_JSON || "";
-  const runnerTemp = process.env.RUNNER_TEMP || "/tmp";
   const { finalMessage } = loadCliResult(resultJson);
 
   const outputFile =
     readInputs().outputFile.trim() ||
-    join(runnerTemp, "texra-final-message.md");
+    join(runnerTemp(), "texra-final-message.md");
   mkdirSync(dirname(outputFile), { recursive: true });
   writeFileSync(outputFile, `${finalMessage}\n`);
 

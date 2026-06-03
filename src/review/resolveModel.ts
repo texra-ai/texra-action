@@ -1,4 +1,5 @@
 import { PROVIDERS } from "../lib/providers";
+import { trimToUndefined } from "../lib/text";
 
 /**
  * Resolve which TeXRA model the review should run with.
@@ -13,10 +14,6 @@ export interface ResolvedReviewModel {
   source: string;
 }
 
-function nonEmpty(value: string | undefined): string | undefined {
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
 export interface ResolveReviewModelInput {
   configuredModel?: string;
   providerKeys?: Record<string, string | undefined>;
@@ -29,14 +26,14 @@ export function resolveReviewModel(
 ): ResolvedReviewModel {
   const { configuredModel, providerKeys = {}, defaultModels = {} } = input;
 
-  const explicit = nonEmpty(configuredModel);
+  const explicit = trimToUndefined(configuredModel);
   if (explicit) return { model: explicit, source: "configured" };
 
   const defaultFor = (id: string, fallback: string): string =>
-    nonEmpty(defaultModels[id]) ?? fallback;
+    trimToUndefined(defaultModels[id]) ?? fallback;
 
   for (const provider of PROVIDERS) {
-    if (!nonEmpty(providerKeys[provider.id])) continue;
+    if (!trimToUndefined(providerKeys[provider.id])) continue;
     return {
       model: defaultFor(provider.id, provider.reviewDefaultModel),
       source: provider.id,

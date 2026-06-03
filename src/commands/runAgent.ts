@@ -6,6 +6,7 @@ import { parseCliArgs } from "../lib/cliArgs";
 import { readInputs } from "../lib/inputs";
 import { splitLines } from "../lib/lines";
 import { providerEnv } from "../lib/providers";
+import { runnerTemp, workspaceDir } from "../lib/runnerEnv";
 
 /**
  * Run `texra agents run <agent> ... --output-format json --print`, capturing the
@@ -17,14 +18,11 @@ import { providerEnv } from "../lib/providers";
  */
 export async function run(): Promise<void> {
   const inputs = readInputs();
-  const runnerTemp = process.env.RUNNER_TEMP || "/tmp";
   const resultJson =
     (process.env.TEXRA_RESULT_JSON || "").trim() ||
-    join(runnerTemp, "texra-result.json");
+    join(runnerTemp(), "texra-result.json");
   const workingDirectory =
-    process.env.TEXRA_WORKING_DIRECTORY ||
-    process.env.GITHUB_WORKSPACE ||
-    process.cwd();
+    process.env.TEXRA_WORKING_DIRECTORY || workspaceDir();
   const promptRelative = process.env.TEXRA_PROMPT_RELATIVE || "";
   const model = (process.env.TEXRA_MODEL || inputs.model).trim();
   const contextFiles = splitLines(
