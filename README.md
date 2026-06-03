@@ -76,7 +76,7 @@ See [`examples/`](./examples) for path-filtered review, custom prompts,
 | `context-files`        |                           | Newline-separated read-only files passed as `--context`.                                                |
 | `texra-version`        | `` (latest)               | CLI version; `workspace` builds a local checkout.                                                       |
 | `api-mode`             | `personal`                | Use `personal` so provider keys are used (not a TeXRA login).                                           |
-| `approval-policy`      | `never`                   | Keep `never` in CI for read-only safety.                                                                |
+| `approval-policy`      | `yolo`                    | `yolo` enables bash + unrestricted tool calls; `never` is read-only.                                    |
 | `working-directory`    | `${{ github.workspace }}` | Directory the agent runs against (`--cwd`).                                                             |
 | `cli-args`             |                           | Extra CLI args (JSON array or shell string).                                                            |
 | `require-write-access` | `false`                   | Require the actor to have write access before running.                                                  |
@@ -98,8 +98,8 @@ Outputs: `final-message`, `output-file`, `result-json`, `structured-output`.
 Outputs: `review-json`, `final-message`, `model`, `output-file`.
 
 Full reference: [docs/usage.md](./docs/usage.md) ·
-[configuration](./docs/configuration.md) ·
-[review mode](./docs/review-mode.md) · [security](./docs/security.md).
+[configuration](./docs/configuration.md) · [review mode](./docs/review-mode.md) ·
+[how it works](./docs/how-it-works.md) · [security](./docs/security.md).
 
 ## How it works
 
@@ -107,17 +107,20 @@ Full reference: [docs/usage.md](./docs/usage.md) ·
 2. Installs `@texra-ai/cli` from npm (or builds a `workspace` checkout).
 3. (review) Computes the PR diff and the commentable-line anchors, collects
    previous TeXRA review threads, and assembles the prompt.
-4. Runs `texra agents run <agent> --output-format json --print` read-only
-   (`--api-mode personal --approval-policy never`).
+4. Runs `texra agents run <agent> --output-format json --print`
+   (`--api-mode personal --approval-policy yolo`, so the agent has the bash tool
+   and full tool access; set `approval-policy: never` for a read-only run).
 5. (review) Normalizes the agent's JSON and posts a single `COMMENT` review
    with inline comments that land on commentable lines.
 
 ## Security
 
-The agent runs read-only: `--approval-policy never` means no destructive tool
-action is ever approved in the non-interactive runner. PR title, body, diff, and
-comments are treated as untrusted input. For mention/`pull_request_target`
-triggers, set `require-write-access: true`. See [docs/security.md](./docs/security.md).
+By default the agent runs with `--approval-policy yolo`: it has the bash tool and
+unrestricted tool calls, executing in the runner with the job's privileges (set
+`approval-policy: never` for a read-only run). PR title, body, diff, and comments
+are treated as untrusted input; on fork PRs no provider secret is exposed, so the
+run no-ops before the agent starts. For mention/`pull_request_target` triggers,
+set `require-write-access: true`. See [docs/security.md](./docs/security.md).
 
 ## License
 

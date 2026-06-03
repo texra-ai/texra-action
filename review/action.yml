@@ -26,6 +26,10 @@ inputs:
     description: "Version of @texra-ai/cli to install ('' / 'latest' / a version / 'workspace')."
     required: false
     default: ""
+  approval-policy:
+    description: "Approval policy for tool actions. 'yolo' (default) auto-approves every action, giving the agent the bash tool and unrestricted tool calls; 'never' keeps the run read-only (denies bash)."
+    required: false
+    default: "yolo"
   review-marker:
     description: "HTML-comment marker used to identify TeXRA review threads."
     required: false

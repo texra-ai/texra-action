@@ -50,9 +50,9 @@ inputs:
     required: false
     default: "personal"
   approval-policy:
-    description: "Approval policy for privileged tool actions. Keep 'never' in CI for read-only safety."
+    description: "Approval policy for tool actions. 'yolo' (default) auto-approves every action, enabling the bash tool and unrestricted tool calls; 'never' keeps the run read-only."
     required: false
-    default: "never"
+    default: "yolo"
   working-directory:
     description: "Repository directory the agent runs against (mapped to --cwd)."
     required: false

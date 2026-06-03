@@ -11,7 +11,8 @@ reviewer. It runs these steps:
    TeXRA marker, so the agent can resolve or reply to them.
 4. **Assemble prompt** — your prompt plus a runtime-context block naming the
    diff, the anchors file, and the previous-threads file.
-5. **Run** — `texra agents run <agent> --output-format json --print` read-only.
+5. **Run** — `texra agents run <agent> --output-format json --print` with full
+   tool access by default (`approval-policy: yolo`; set `never` for read-only).
 6. **Normalize** — extract the JSON the agent emits into the canonical payload.
 7. **Post** — create a single `COMMENT` review with inline comments and a body.
 

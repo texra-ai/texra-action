@@ -1,6 +1,24 @@
 # Changelog
 
-## Unreleased
+## v1.1.0
+
+### Changed
+
+- **Default `approval-policy` is now `yolo`.** The review agent runs with the
+  bash tool and unrestricted tool calls by default, executing shell commands in
+  the runner to investigate changes. The bundled review prompt no longer forbids
+  shell use. Set `approval-policy: never` to restore the previous read-only
+  behavior. On fork PRs the run still no-ops for lack of a provider secret; read
+  [docs/security.md](./docs/security.md) before adopting on secret-exposing
+  triggers.
+
+### Added
+
+- `approval-policy` input exposed on the **review action** (it was already
+  present on the core action), so review workflows can choose `yolo` (default)
+  or `never`.
+
+## v1.0.0
 
 ### Features
 
