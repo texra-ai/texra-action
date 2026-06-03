@@ -169,9 +169,7 @@ runs:
       if: ${{ inputs.require-write-access == 'true' }}
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
-        ALLOW_USERS: ${{ inputs.allow-users }}
-        ALLOW_BOTS: ${{ inputs.allow-bots }}
+        INPUTS: ${{ toJson(inputs) }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/bunfig.toml" \
@@ -205,12 +203,7 @@ runs:
       id: prompt
       shell: bash
       env:
-        INPUT_PROMPT: ${{ inputs.prompt }}
-        INPUT_PROMPT_FILE: ${{ inputs.prompt-file }}
-        INPUT_PROMPT_CONTEXT: ${{ inputs.prompt-context }}
-        INPUT_PROMPT_CONTEXT_FILE: ${{ inputs.prompt-context-file }}
-        INPUT_CONTEXT_FILES: ${{ inputs.context-files }}
-        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUTS: ${{ toJson(inputs) }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/bunfig.toml" \
@@ -220,26 +213,9 @@ runs:
       id: run
       shell: bash
       env:
-        TEXRA_AGENT: ${{ inputs.agent }}
-        TEXRA_MODEL: ${{ inputs.model }}
-        TEXRA_API_MODE: ${{ inputs.api-mode }}
-        TEXRA_APPROVAL_POLICY: ${{ inputs.approval-policy }}
-        TEXRA_OUTPUT_FORMAT: ${{ inputs.output-format }}
-        TEXRA_VERSION_INPUT: ${{ inputs.texra-version }}
+        INPUTS: ${{ toJson(inputs) }}
         TEXRA_WORKING_DIRECTORY: ${{ steps.prompt.outputs.working-directory }}
         TEXRA_PROMPT_RELATIVE: ${{ steps.prompt.outputs.prompt-relative }}
-        TEXRA_CONTEXT_FILES: ${{ inputs.context-files }}
-        TEXRA_CLI_ARGS: ${{ inputs.cli-args }}
-        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
-        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
-        DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
-        GOOGLE_API_KEY: ${{ inputs.google-api-key }}
-        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
-        XAI_API_KEY: ${{ inputs.xai-api-key }}
-        MOONSHOT_API_KEY: ${{ inputs.moonshot-api-key }}
-        DASHSCOPE_API_KEY: ${{ inputs.dashscope-api-key }}
-        MINIMAX_API_KEY: ${{ inputs.minimax-api-key }}
-        GLM_API_KEY: ${{ inputs.glm-api-key }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/bunfig.toml" \
@@ -249,8 +225,8 @@ runs:
       id: parse
       shell: bash
       env:
+        INPUTS: ${{ toJson(inputs) }}
         RESULT_JSON: ${{ steps.run.outputs.result-json }}
-        INPUT_OUTPUT_FILE: ${{ inputs.output-file }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/bunfig.toml" \

@@ -7,19 +7,22 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { readInputs } from "../lib/inputs";
 import { splitLines } from "../lib/lines";
 
 /**
  * Assemble the instruction file the agent runs against: the prompt (inline or
  * file) followed by any runtime context and a list of attached context files.
  * Emits the working directory plus absolute and workspace-relative prompt paths.
+ *
+ * Two env overrides let review mode inject step-derived values: a default prompt
+ * file (`TEXRA_DEFAULT_PROMPT_FILE`) used when no `prompt-file` input is given,
+ * and a generated runtime-context file (`TEXRA_PROMPT_CONTEXT_FILE`).
  */
 export async function run(): Promise<void> {
+  const inputs = readInputs();
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
-  const workingDirectoryInput = (
-    process.env.INPUT_WORKING_DIRECTORY ?? ""
-  ).trim();
-  const requestedDirectory = workingDirectoryInput || workspace;
+  const requestedDirectory = inputs.workingDirectory.trim() || workspace;
   let workingDirectory: string;
   try {
     workingDirectory = realpathSync(requestedDirectory);
@@ -30,8 +33,10 @@ export async function run(): Promise<void> {
     process.exit(1);
   }
 
-  let prompt = process.env.INPUT_PROMPT ?? "";
-  const promptFile = (process.env.INPUT_PROMPT_FILE ?? "").trim();
+  let prompt = inputs.prompt;
+  const promptFile =
+    inputs.promptFile.trim() ||
+    (process.env.TEXRA_DEFAULT_PROMPT_FILE ?? "").trim();
   if (!prompt && promptFile) {
     if (!existsSync(promptFile)) {
       core.setFailed(`TeXRA prompt file not found: ${promptFile}`);
@@ -50,12 +55,12 @@ export async function run(): Promise<void> {
 
   const sections: string[] = [`${prompt.replace(/\n*$/, "")}\n`];
 
-  const promptContext = (process.env.INPUT_PROMPT_CONTEXT ?? "").trim();
+  const promptContext = inputs.promptContext.trim();
   if (promptContext) sections.push(`\n## Runtime Context\n${promptContext}\n`);
 
-  const promptContextFile = (
-    process.env.INPUT_PROMPT_CONTEXT_FILE ?? ""
-  ).trim();
+  const promptContextFile =
+    (process.env.TEXRA_PROMPT_CONTEXT_FILE ?? "").trim() ||
+    inputs.promptContextFile.trim();
   if (promptContextFile) {
     if (!existsSync(promptContextFile)) {
       core.setFailed(
@@ -68,7 +73,7 @@ export async function run(): Promise<void> {
     );
   }
 
-  for (const file of splitLines(process.env.INPUT_CONTEXT_FILES)) {
+  for (const file of splitLines(inputs.contextFiles)) {
     sections.push(`\nContext file: \`${file}\`\n`);
   }
 

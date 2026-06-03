@@ -138,9 +138,7 @@ runs:
       if: ${{ inputs.require-write-access == 'true' }}
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
-        ALLOW_USERS: ${{ inputs.allow-users }}
-        ALLOW_BOTS: ${{ inputs.allow-bots }}
+        INPUTS: ${{ toJson(inputs) }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -173,18 +171,7 @@ runs:
       id: model
       shell: bash
       env:
-        TEXRA_REVIEW_MODEL: ${{ inputs.model }}
-        TEXRA_REVIEW_MODEL_DEFAULTS: ${{ inputs.model-defaults }}
-        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
-        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
-        DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
-        GOOGLE_API_KEY: ${{ inputs.google-api-key }}
-        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
-        XAI_API_KEY: ${{ inputs.xai-api-key }}
-        MOONSHOT_API_KEY: ${{ inputs.moonshot-api-key }}
-        DASHSCOPE_API_KEY: ${{ inputs.dashscope-api-key }}
-        MINIMAX_API_KEY: ${{ inputs.minimax-api-key }}
-        GLM_API_KEY: ${{ inputs.glm-api-key }}
+        INPUTS: ${{ toJson(inputs) }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -202,8 +189,7 @@ runs:
       id: threads
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
-        TEXRA_REVIEW_MARKER: ${{ inputs.review-marker }}
+        INPUTS: ${{ toJson(inputs) }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -223,24 +209,14 @@ runs:
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
           run "${GITHUB_ACTION_PATH}/../src/main.ts" write-prompt-context
 
-    - name: Select review prompt
-      id: select-prompt
-      shell: bash
-      env:
-        INPUT_PROMPT_FILE: ${{ inputs.prompt-file }}
-      run: |
-        file="$INPUT_PROMPT_FILE"
-        if [ -z "$file" ]; then
-          file="${GITHUB_ACTION_PATH}/../prompts/review-default.md"
-        fi
-        echo "prompt-file=$file" >> "$GITHUB_OUTPUT"
-
     - name: Resolve prompt
       id: prompt
       shell: bash
       env:
-        INPUT_PROMPT_FILE: ${{ steps.select-prompt.outputs.prompt-file }}
-        INPUT_PROMPT_CONTEXT_FILE: ${{ steps.context.outputs.path }}
+        INPUTS: ${{ toJson(inputs) }}
+        # Default to the bundled neutral prompt when no prompt-file is provided.
+        TEXRA_DEFAULT_PROMPT_FILE: ${{ github.action_path }}/../prompts/review-default.md
+        TEXRA_PROMPT_CONTEXT_FILE: ${{ steps.context.outputs.path }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -250,28 +226,14 @@ runs:
       id: run
       shell: bash
       env:
-        TEXRA_AGENT: ${{ inputs.agent }}
+        INPUTS: ${{ toJson(inputs) }}
         TEXRA_MODEL: ${{ steps.model.outputs.model }}
-        TEXRA_API_MODE: personal
-        TEXRA_APPROVAL_POLICY: never
-        TEXRA_OUTPUT_FORMAT: json
-        TEXRA_VERSION_INPUT: ${{ inputs.texra-version }}
         TEXRA_WORKING_DIRECTORY: ${{ steps.prompt.outputs.working-directory }}
         TEXRA_PROMPT_RELATIVE: ${{ steps.prompt.outputs.prompt-relative }}
         TEXRA_CONTEXT_FILES: |
           ${{ steps.diff.outputs.diff-file }}
           ${{ steps.diff.outputs.commentable-lines-md }}
           ${{ steps.threads.outputs.path }}
-        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
-        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
-        DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
-        GOOGLE_API_KEY: ${{ inputs.google-api-key }}
-        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
-        XAI_API_KEY: ${{ inputs.xai-api-key }}
-        MOONSHOT_API_KEY: ${{ inputs.moonshot-api-key }}
-        DASHSCOPE_API_KEY: ${{ inputs.dashscope-api-key }}
-        MINIMAX_API_KEY: ${{ inputs.minimax-api-key }}
-        GLM_API_KEY: ${{ inputs.glm-api-key }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -281,8 +243,8 @@ runs:
       id: normalize
       shell: bash
       env:
+        INPUTS: ${{ toJson(inputs) }}
         RESULT_JSON: ${{ steps.run.outputs.result-json }}
-        INPUT_OUTPUT_FILE: ${{ inputs.output-file }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -291,13 +253,10 @@ runs:
     - name: Post TeXRA review
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
+        INPUTS: ${{ toJson(inputs) }}
         TEXRA_REVIEW_JSON: ${{ steps.normalize.outputs.review-json }}
-        TEXRA_REVIEW_MARKER: ${{ inputs.review-marker }}
         TEXRA_COMMENTABLE_LINES_JSON: ${{ steps.diff.outputs.commentable-lines-json }}
         TEXRA_THREADS_JSON: ${{ steps.threads.outputs.path }}
-        TEXRA_RESOLVE_THREADS: ${{ inputs.resolve-threads }}
-        TEXRA_REVIEW_AGENT: ${{ inputs.agent }}
         TEXRA_REVIEW_MODEL: ${{ steps.model.outputs.model }}
       run: |
         bun --no-env-file \

@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import { readInputs } from "../lib/inputs";
 import { context, makeOctokit } from "../lib/octokit";
 import { ensureActorHasWriteAccess } from "../lib/writeAccess";
 
@@ -9,13 +10,14 @@ import { ensureActorHasWriteAccess } from "../lib/writeAccess";
  * (e.g. via pull_request_target). Robust resolution lives in `../lib/writeAccess`.
  */
 export async function run(): Promise<void> {
-  const token = process.env.GITHUB_TOKEN ?? "";
+  const inputs = readInputs();
+  const token = inputs.githubToken;
   const octokit = token ? makeOctokit(token) : null;
 
   const result = await ensureActorHasWriteAccess({
     actor: context.actor,
-    allowUsers: process.env.ALLOW_USERS ?? "",
-    allowBots: process.env.ALLOW_BOTS ?? "",
+    allowUsers: inputs.allowUsers,
+    allowBots: inputs.allowBots,
     fetchPermission: async (username) => {
       if (!octokit) {
         throw new Error(

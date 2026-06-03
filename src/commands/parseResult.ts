@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { loadCliResult } from "../lib/cliResult";
+import { readInputs } from "../lib/inputs";
 import { parseModelJson } from "../lib/parseModelJson";
 
 /**
@@ -15,7 +16,7 @@ export async function run(): Promise<void> {
   const { finalMessage } = loadCliResult(resultJson);
 
   const outputFile =
-    (process.env.INPUT_OUTPUT_FILE || "").trim() ||
+    readInputs().outputFile.trim() ||
     join(runnerTemp, "texra-final-message.md");
   mkdirSync(dirname(outputFile), { recursive: true });
   writeFileSync(outputFile, `${finalMessage}\n`);

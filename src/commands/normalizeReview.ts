@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { isStatusOnlyMessage, loadCliResult } from "../lib/cliResult";
+import { readInputs } from "../lib/inputs";
 import { DEFAULT_REVIEW_BODY, normalizeReview } from "../review/normalize";
 
 /**
@@ -21,8 +22,7 @@ export async function run(): Promise<void> {
   const body = review.body.trim();
 
   const outputFile =
-    (process.env.INPUT_OUTPUT_FILE || "").trim() ||
-    join(runnerTemp, "texra-code-review.md");
+    readInputs().outputFile.trim() || join(runnerTemp, "texra-code-review.md");
   const reviewJsonFile = join(runnerTemp, "texra-code-review-normalized.json");
   mkdirSync(dirname(outputFile), { recursive: true });
   writeFileSync(outputFile, `${body}\n`);

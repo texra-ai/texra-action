@@ -1,12 +1,14 @@
 import * as core from "@actions/core";
 import { readFileSync } from "node:fs";
+import { readInputs } from "../lib/inputs";
 import { context, makeOctokit, pullRequest } from "../lib/octokit";
 import { postTexraReview } from "../review/postReview";
 import type { ReviewPayload } from "../review/types";
 
 /** Post the normalized review to the pull request as a single COMMENT review. */
 export async function run(): Promise<void> {
-  const token = process.env.GITHUB_TOKEN || "";
+  const inputs = readInputs();
+  const token = inputs.githubToken;
   const reviewJsonPath = process.env.TEXRA_REVIEW_JSON || "";
   const pr = pullRequest();
 
@@ -29,15 +31,16 @@ export async function run(): Promise<void> {
     pullNumber: pr.number,
     headSha: pr.head?.sha ?? "",
     review,
-    marker: process.env.TEXRA_REVIEW_MARKER || "<!-- texra-review -->",
+    marker: inputs.reviewMarker,
     commentableLinesJsonPath:
       process.env.TEXRA_COMMENTABLE_LINES_JSON ||
       ".texra-action/commentable-lines.json",
     threadsJsonPath:
       process.env.TEXRA_THREADS_JSON ||
       ".texra-action/previous-texra-review-threads.json",
-    resolveThreads: process.env.TEXRA_RESOLVE_THREADS === "true",
-    agent: process.env.TEXRA_REVIEW_AGENT || undefined,
+    resolveThreads: inputs.resolveThreads,
+    agent: inputs.agent || undefined,
+    // The resolved model is passed from the resolve-model step output.
     model: process.env.TEXRA_REVIEW_MODEL || undefined,
     logger: core,
   });
