@@ -3,17 +3,17 @@
 ## Capability model
 
 By default the action runs the agent with `--api-mode personal --approval-policy
-yolo`. Under `yolo` every tool action is auto-approved: the agent has the **bash
-tool** and unrestricted tool calls, and runs arbitrary shell commands in the
-runner with the same privileges as any other step in the job. The agent never
-holds a GitHub token — it emits a JSON review that the action posts — but within
-the runner it is unrestricted.
+yolo`. Under `yolo` every tool action is auto-approved: the agent has the bash
+tool and unrestricted tool calls, and runs shell commands in the runner with the
+same privileges as any other step in the job. The agent never holds a GitHub
+token; it emits a JSON review that the action posts. Within the runner, though,
+it is unrestricted.
 
-Because `yolo` executes untrusted-PR-influenced code, the **fork no-op below is
-load-bearing**: on `pull_request` from a fork GitHub exposes no repository
-secret, so the run no-ops before the agent starts (no provider key, no model
-call). Unrestricted runs therefore only happen when a provider key is available —
-same-repo PRs, or contexts you opt into. If you wire this action onto a trigger
+Because `yolo` executes untrusted-PR-influenced code, the fork no-op below
+matters: on `pull_request` from a fork GitHub exposes no repository secret, so
+the run no-ops before the agent starts (no provider key, no model call).
+Unrestricted runs therefore only happen when a provider key is available, on
+same-repo PRs or contexts you opt into. If you wire this action onto a trigger
 that exposes secrets to untrusted actors, either enable the authorization gate
 (below) or run read-only:
 
@@ -37,11 +37,10 @@ instructions:
 ## Who can trigger a run
 
 On `pull_request` from a fork, GitHub does **not** expose repository secrets, so
-a fork PR cannot spend your provider credits — the run no-ops without a key.
+a fork PR cannot spend your provider credits; the run no-ops without a key.
 
-For triggers that _do_ expose secrets to untrusted actors — `pull_request_target`
-or `@texra` mention handling via `issue_comment` — enable the authorization
-gate:
+For triggers that _do_ expose secrets to untrusted actors (`pull_request_target`,
+or `@texra` mention handling via `issue_comment`), enable the authorization gate:
 
 ```yaml
 with:

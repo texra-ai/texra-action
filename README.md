@@ -8,7 +8,7 @@ The action installs the [`@texra-ai/cli`](https://www.npmjs.com/package/@texra-a
 runs `texra agents run` against your repository, and (in review mode) posts a
 pull-request review with inline comments and a summary.
 
-## Quickstart — pull request review
+## Quickstart: pull request review
 
 ```yaml
 # .github/workflows/texra-code-review.yml
@@ -60,10 +60,10 @@ See [`examples/`](./examples) for path-filtered review, custom prompts,
 
 ## Two actions
 
-| Action                            | Purpose                                                      |
-| --------------------------------- | ------------------------------------------------------------ |
-| `texra-ai/texra-action@v1`        | Generic runner — run a tool-use agent, expose its message.   |
-| `texra-ai/texra-action/review@v1` | Review mode — diff, run, and post a PR review with comments. |
+| Action                            | Purpose                                                     |
+| --------------------------------- | ----------------------------------------------------------- |
+| `texra-ai/texra-action@v1`        | Generic runner. Run a tool-use agent, expose its message.   |
+| `texra-ai/texra-action/review@v1` | Review mode. Diff, run, and post a PR review with comments. |
 
 ## Core action inputs (selected)
 

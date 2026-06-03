@@ -1,27 +1,25 @@
 # How the review works
 
-The code-review action runs a **tool-use agent** that investigates a pull
-request and emits a single structured review at the end; the action then
-**validates and posts** that review. The agent never holds a GitHub token and
-never calls the GitHub API — separating "decide what to say" (agent) from
-"place it on the PR" (action) keeps comment placement, de-duplication, and
-fallbacks in one auditable place.
+The code-review action runs a tool-use agent that investigates a pull request
+and emits one structured review. The action validates that review and posts it.
+The agent never holds a GitHub token and never calls the GitHub API: the agent
+decides what to say, and the action places it on the PR.
 
 ## Pipeline
 
 Each step is a subcommand of the action's multitool (`src/main.ts`), wired
 together in `review/action.yml`:
 
-| Step                     | What it does                                                                                                                                                                                      |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **resolve-model**        | Pick the model: an explicit `model` if set, otherwise the default for the first configured provider key (`src/review/resolveModel.ts`, `src/lib/providers.ts`).                                   |
-| **prepare-diff**         | `git diff merge-base(base, head)..head` into a diff file, then parse it into **commentable-line anchors** — the exact added (`RIGHT`) and removed (`LEFT`) lines an inline comment may attach to. |
-| **collect-threads**      | GraphQL-fetch the PR's existing review threads that carry the review marker, so the agent can reply to or resolve its own earlier comments.                                                       |
-| **write-prompt-context** | Render PR metadata (read natively from the `@actions/github` event context) plus labelled file references into a context file.                                                                    |
-| **resolve-prompt**       | Concatenate the prompt (a supplied `prompt-file`, else the bundled neutral default) with the context into one instruction file.                                                                   |
-| **run-agent**            | Run the TeXRA CLI (below).                                                                                                                                                                        |
-| **normalize-review**     | Parse the agent's output into the canonical review payload.                                                                                                                                       |
-| **post-review**          | Place the review on the PR.                                                                                                                                                                       |
+| Step                     | What it does                                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **resolve-model**        | Pick the model: an explicit `model` if set, otherwise the default for the first configured provider key (`src/review/resolveModel.ts`, `src/lib/providers.ts`).                            |
+| **prepare-diff**         | `git diff merge-base(base, head)..head` into a diff file, then parse it into **commentable-line anchors**: the added (`RIGHT`) and removed (`LEFT`) lines an inline comment may attach to. |
+| **collect-threads**      | GraphQL-fetch the PR's existing review threads that carry the review marker, so the agent can reply to or resolve its own earlier comments.                                                |
+| **write-prompt-context** | Render PR metadata (read natively from the `@actions/github` event context) plus labelled file references into a context file.                                                             |
+| **resolve-prompt**       | Concatenate the prompt (a supplied `prompt-file`, else the bundled neutral default) with the context into one instruction file.                                                            |
+| **run-agent**            | Run the TeXRA CLI (below).                                                                                                                                                                 |
+| **normalize-review**     | Parse the agent's output into the canonical review payload.                                                                                                                                |
+| **post-review**          | Place the review on the PR.                                                                                                                                                                |
 
 ## The agent run
 
@@ -34,11 +32,10 @@ texra agents run <agent> --instruction-file <prompt> --cwd <workspace> \
   --context <pr.diff> --context <commentable-lines.md> --context <threads.json>
 ```
 
-- The agent is a **tool-use agent**. It reads the diff, the commentable
-  anchors, and any prior threads, then inspects the actual repository files to
-  ground its findings.
-- `--approval-policy` sets the capability ceiling — see
-  [`approval policy`](#approval-policy-and-capabilities).
+- The agent is a tool-use agent. It reads the diff, the commentable anchors, and
+  any prior threads, then inspects the repository files.
+- `--approval-policy` sets the capability ceiling. See
+  [approval policy](#approval-policy-and-capabilities).
 - `--api-mode personal` runs against the provider keys you pass in, not a
   hosted relay. Keys are injected into the CLI subprocess environment as
   `<PROVIDER>_API_KEY` (`src/lib/providers.ts`); they are never written to disk
@@ -69,9 +66,9 @@ log). `normalize-review`:
    malformed comments are dropped, thread actions de-duplicated, and the list
    capped.
 
-This "emit structured JSON at the end, parse it centrally" approach is chosen
-over having the agent call GitHub directly: it is atomic, easy to validate, and
-keeps the agent free of any write credential.
+Emitting structured JSON and parsing it centrally is simpler than having the
+agent call GitHub directly: it is atomic, easy to validate, and keeps the agent
+free of any write credential.
 
 ## Posting
 
@@ -93,16 +90,15 @@ ones.
 ## Approval policy and capabilities
 
 The `approval-policy` input controls what the agent may do. It defaults to
-**`yolo`**:
+`yolo`:
 
-- **`yolo`** (default) — every tool action is auto-approved, which enables the
-  **bash tool** and unrestricted tool calls. The agent can run arbitrary shell
-  commands in the runner to investigate the code as deeply as it needs.
-- **`never`** — read-only. Read / search / glob tools are available; the bash
-  tool and any write/edit tool are denied. The agent cannot run shell commands
-  or modify files.
+- **`yolo`** (default): every tool action is auto-approved, enabling the bash
+  tool and unrestricted tool calls. The agent can run shell commands in the
+  runner.
+- **`never`**: read-only. Read, search, and glob tools are available; the bash
+  tool and any write or edit tool are denied.
 
-Treat `yolo` as running untrusted-PR-influenced code with full shell access in
-the runner; see [`security.md`](./security.md) for the trust model and the
-mitigations (fork PRs no-op for lack of a provider secret, the prompt is sourced
-from the trusted base branch, and the agent holds no GitHub token).
+Under `yolo` the agent runs untrusted-PR-influenced code with shell access in
+the runner. See [security.md](./security.md) for the trust model and the
+mitigations: fork PRs no-op without a provider secret, the prompt comes from the
+trusted base branch, and the agent holds no GitHub token.

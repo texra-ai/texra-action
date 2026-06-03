@@ -3,18 +3,18 @@
 `texra-ai/texra-action/review@v1` turns a TeXRA agent into a pull-request
 reviewer. It runs these steps:
 
-1. **Resolve model** — pick the review model from `model` / configured keys.
-2. **Prepare diff** — compute `merge-base(base, head)..head` and parse it into
+1. **Resolve model**: pick the review model from `model` / configured keys.
+2. **Prepare diff**: compute `merge-base(base, head)..head` and parse it into
    the set of commentable line anchors (RIGHT = head lines, LEFT = removed base
    lines).
-3. **Collect threads** — read the PR's existing review threads that carry the
+3. **Collect threads**: read the PR's existing review threads that carry the
    TeXRA marker, so the agent can resolve or reply to them.
-4. **Assemble prompt** — your prompt plus a runtime-context block naming the
+4. **Assemble prompt**: your prompt plus a runtime-context block naming the
    diff, the anchors file, and the previous-threads file.
-5. **Run** — `texra agents run <agent> --output-format json --print` with full
-   tool access by default (`approval-policy: yolo`; set `never` for read-only).
-6. **Normalize** — extract the JSON the agent emits into the canonical payload.
-7. **Post** — create a single `COMMENT` review with inline comments and a body.
+5. **Run**: `texra agents run <agent> --output-format json --print`. The agent
+   runs under `approval-policy: yolo` by default; set `never` for a read-only run.
+6. **Normalize**: extract the JSON the agent emits into the canonical payload.
+7. **Post**: create a single `COMMENT` review with inline comments and a body.
 
 ## The review payload contract
 
@@ -66,8 +66,8 @@ actions are skipped with a notice rather than failing the run.
 ## Failure behavior
 
 If the agent run itself exits non-zero (for example a CLI or provider error),
-the job fails and **no** review is posted — the failure is visible as a failed
-check rather than a misleading "review" comment. An empty or status-only final
+the job fails and **no** review is posted. The failure shows as a failed check
+rather than a misleading "review" comment. An empty or status-only final
 message is still posted, with a default body.
 
 ## Custom prompt

@@ -3,7 +3,7 @@ updates:
   # Keep the third-party action version tags (workflows + both composite actions)
   # current. Grouped into a single weekly PR to minimise noise.
   #
-  # Note: bun dependencies (package.json / bun.lock) are updated manually —
+  # Note: bun dependencies (package.json / bun.lock) are updated manually.
   # Dependabot cannot reliably update bun.lock, which would break the
   # `bun install --frozen-lockfile` CI gate.
   - package-ecosystem: "github-actions"
