@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Keep the SHA-pinned third-party actions (workflows + both composite actions)
+  # up to date. Grouped into a single weekly PR to minimise noise.
+  #
+  # Note: bun dependencies (package.json / bun.lock) are updated manually —
+  # Dependabot cannot reliably update bun.lock, which would break the
+  # `bun install --frozen-lockfile` CI gate.
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/review"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - "*"
