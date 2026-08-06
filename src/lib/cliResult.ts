@@ -1,21 +1,41 @@
 import { readFileSync } from "node:fs";
+import { z } from "zod";
 
 /**
- * Read and interpret the JSON emitted by `texra agents run ... --output-format
+ * Read and validate the JSON emitted by `texra agents run ... --output-format
  * json --print`.
  *
  * The CLI may wrap its payload as `{ result: {...} }` or emit the result object
- * directly; both shapes are handled. The agent's last assistant message lives on
- * `result.response` (named `result.lastResponse` before the TeXRA CLI
- * canonicalized its tool-use result fields in Aug 2026; both names are read so
- * the action works across CLI versions).
+ * directly; both shapes are handled. Legacy field aliases from CLI versions
+ * before the Aug 2026 result-field canonicalization (`lastResponse` ->
+ * `response`, `touchedFiles` -> `files`) are folded here, once, at the
+ * boundary; downstream code only ever sees the canonical names. A payload
+ * whose fields do not match the expected types is a loud error, not an empty
+ * result.
  */
-export interface CliResult {
-  payload: Record<string, unknown>;
-  result: Record<string, unknown>;
-  /** Trimmed `result.response` (legacy `result.lastResponse`), or "" when absent. */
-  finalMessage: string;
-}
+const RunResultSchema = z
+  .looseObject({
+    category: z.string().optional(),
+    outcome: z.string().optional(),
+    executionId: z.string().optional(),
+    response: z.string().nullish(),
+    /** Legacy alias for `response` (@texra-ai/cli < 0.40.0). */
+    lastResponse: z.string().nullish(),
+    files: z.array(z.string()).nullish(),
+    /** Legacy alias for `files` (@texra-ai/cli < 0.40.0). */
+    touchedFiles: z.array(z.string()).nullish(),
+    /** Native structured output when the agent produced one. */
+    structured: z.unknown().optional(),
+    cost: z.number().optional(),
+  })
+  .transform(({ response, lastResponse, files, touchedFiles, ...rest }) => ({
+    ...rest,
+    response: response ?? lastResponse ?? "",
+    files: files ?? touchedFiles ?? [],
+  }));
+
+/** Canonical run result: legacy aliases already folded. */
+export type CliRunResult = z.infer<typeof RunResultSchema>;
 
 /** Short acknowledgements a tool-use agent may emit instead of real content. */
 export const STATUS_ONLY_MESSAGES = new Set([
@@ -29,6 +49,16 @@ export const STATUS_ONLY_MESSAGES = new Set([
 
 export function isStatusOnlyMessage(value: string): boolean {
   return STATUS_ONLY_MESSAGES.has(value.trim().toLowerCase());
+}
+
+export interface CliResult {
+  payload: Record<string, unknown>;
+  /** Validated canonical run result. */
+  result: CliRunResult;
+  /** Trimmed `result.response`, or "" when the run produced none. */
+  finalMessage: string;
+  /** Native structured output, `undefined` when the agent produced none. */
+  structured: unknown;
 }
 
 export function loadCliResult(resultJsonPath: string): CliResult {
@@ -53,10 +83,18 @@ export function loadCliResult(resultJsonPath: string): CliResult {
       `The TeXRA result file at ${resultJsonPath} is not valid JSON; ensure the agent ran with --output-format json --print.`,
     );
   }
-  const result = ((payload.result as Record<string, unknown>) ??
-    payload) as Record<string, unknown>;
-  const finalMessage = String(
-    ((result.response ?? result.lastResponse) as string) || "",
-  ).trim();
-  return { payload, result, finalMessage };
+  const container = payload.result !== undefined ? payload.result : payload;
+  const parsed = RunResultSchema.safeParse(container);
+  if (!parsed.success) {
+    throw new Error(
+      `The TeXRA result file at ${resultJsonPath} does not match the expected CLI result shape: ${parsed.error.message}`,
+    );
+  }
+  const result = parsed.data;
+  return {
+    payload,
+    result,
+    finalMessage: result.response.trim(),
+    structured: result.structured,
+  };
 }

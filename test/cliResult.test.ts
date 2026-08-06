@@ -51,6 +51,35 @@ describe("loadCliResult", () => {
     const file = writeResult({ result: { outcome: "completed" } });
     expect(loadCliResult(file).finalMessage).toBe("");
   });
+
+  test("folds the legacy touchedFiles alias into files", () => {
+    const file = writeResult({
+      result: { response: "r", touchedFiles: ["a.ts"] },
+    });
+    expect(loadCliResult(file).result.files).toEqual(["a.ts"]);
+  });
+
+  test("surfaces native structured output", () => {
+    const file = writeResult({
+      result: { response: "r", structured: { body: "Review." } },
+    });
+    expect(loadCliResult(file).structured).toEqual({ body: "Review." });
+  });
+
+  test("leaves structured undefined when the agent produced none", () => {
+    const file = writeResult({ result: { response: "r" } });
+    expect(loadCliResult(file).structured).toBeUndefined();
+  });
+
+  test("rejects a result whose fields have the wrong types", () => {
+    const file = writeResult({ result: { response: 42 } });
+    expect(() => loadCliResult(file)).toThrow(/expected CLI result shape/);
+  });
+
+  test("rejects a wrapped payload whose result is not an object", () => {
+    const file = writeResult({ result: "nope" });
+    expect(() => loadCliResult(file)).toThrow(/expected CLI result shape/);
+  });
 });
 
 describe("isStatusOnlyMessage", () => {

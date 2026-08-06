@@ -91,6 +91,21 @@ describe("normalizeReview", () => {
     });
   });
 
+  it("prefers a native structured payload over the message text", () => {
+    const review = normalizeReview("chatty prose, not the review", {
+      body: "Structured body.",
+      comments: [{ path: "a.ts", body: "c", line: 2 }],
+    });
+    expect(review.body).toBe("Structured body.");
+    expect(review.comments).toHaveLength(1);
+  });
+
+  it("ignores a non-object structured value", () => {
+    expect(normalizeReview("prose body", "not an object").body).toBe(
+      "prose body",
+    );
+  });
+
   it("normalizes a full payload and maps legacy aliases", () => {
     const review = normalizeReview(
       JSON.stringify({

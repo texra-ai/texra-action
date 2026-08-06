@@ -38,11 +38,19 @@ export function dedupeThreadActions(actions: ThreadAction[]): ThreadAction[] {
 
 /**
  * Turn a (possibly chatty) model message into the canonical review payload.
- * Falls back to treating the whole message as the review body when it is not
- * valid JSON. Accepts several legacy aliases for thread actions.
+ * A native structured-output object from the CLI result takes precedence;
+ * otherwise the payload is extracted from the message text, falling back to
+ * treating the whole message as the review body when it is not valid JSON.
+ * Accepts several legacy aliases for thread actions.
  */
-export function normalizeReview(rawText: string): ReviewPayload {
-  const modelPayload = parseModelJson(rawText);
+export function normalizeReview(
+  rawText: string,
+  structured?: unknown,
+): ReviewPayload {
+  const modelPayload =
+    structured && typeof structured === "object"
+      ? structured
+      : parseModelJson(rawText);
   if (!modelPayload || typeof modelPayload !== "object") {
     return { body: rawText, comments: [], thread_actions: [] };
   }
