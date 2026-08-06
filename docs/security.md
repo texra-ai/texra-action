@@ -55,8 +55,19 @@ refuses bots unless they are allow-listed.
 
 ## Token scoping
 
+- Install the [TeXRA GitHub App](https://github.com/apps/texra-ai-bot) and grant
+  the job `id-token: write`. By default the action exchanges GitHub Actions
+  OIDC for a one-hour installation token restricted to the calling repository.
+- The exchange accepts only a signed GitHub OIDC token whose exact workflow
+  blob matches the same workflow path on the repository's default branch. A
+  workflow introduced or modified only on a pull-request branch cannot mint an
+  App token.
+- The App token is passed only to authorization and GitHub API steps. It is not
+  placed in the environment of the TeXRA CLI or agent process.
+- `github-token` remains an explicit override for custom Apps and other
+  controlled credentials.
 - Request the least privilege: `contents: read` and, for review mode,
-  `pull-requests: write`.
+  `pull-requests: write`, plus `id-token: write` for App authentication.
 - Use `persist-credentials: false` on the PR checkout.
 - Thread reply / resolve / unresolve mutations are gated behind
   `resolve-threads: true` and a token that can perform them.

@@ -84,9 +84,9 @@ inputs:
     required: false
     default: ""
   github-token:
-    description: "Token used for the write-access check (and reused by review mode)."
+    description: "GitHub token override. Empty exchanges Actions OIDC for the installed TeXRA GitHub App."
     required: false
-    default: ${{ github.token }}
+    default: ""
 
   # --- Provider API keys (forwarded to the CLI as <PROVIDER>_API_KEY) ---
   anthropic-api-key:
@@ -143,6 +143,9 @@ outputs:
   structured-output:
     description: "JSON object extracted from the final message, when present."
     value: ${{ steps.parse.outputs.structured-output }}
+  github-token:
+    description: "Short-lived token used by TeXRA; pass to a later GitHub API step when needed."
+    value: ${{ steps.auth.outputs.token }}
 
 runs:
   using: "composite"
@@ -165,11 +168,22 @@ runs:
         cd "${GITHUB_ACTION_PATH}"
         bun install --production --frozen-lockfile
 
+    - name: Authenticate as TeXRA GitHub App
+      id: auth
+      shell: bash
+      env:
+        INPUTS: ${{ toJson(inputs) }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/src/main.ts" setup-github-token
+
     - name: Check repository write access
       if: ${{ inputs.require-write-access == 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
+        TEXRA_GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/bunfig.toml" \

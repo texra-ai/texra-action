@@ -55,7 +55,7 @@ export const ActionInputsSchema = RawInputsSchema.transform((raw) => ({
   cliArgs: raw["cli-args"],
   reviewMarker: raw["review-marker"],
   resolveThreads: raw["resolve-threads"] === "true",
-  githubToken: raw["github-token"],
+  githubToken: process.env.TEXRA_GITHUB_TOKEN || raw["github-token"],
   requireWriteAccess: raw["require-write-access"] === "true",
   allowUsers: raw["allow-users"],
   allowBots: raw["allow-bots"],

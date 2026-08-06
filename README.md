@@ -28,6 +28,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -41,7 +42,10 @@ jobs:
 
 `fetch-depth: 0` is required so the action can compute the `merge-base..head`
 diff. Provide at least one provider key; the review model is auto-selected from
-whichever keys are present (override with `model`).
+whichever keys are present (override with `model`). Install the
+[TeXRA GitHub App](https://github.com/apps/texra-ai-bot) on the repository;
+`id-token: write` lets the action obtain a short-lived, repository-scoped App
+token without storing the App private key in your repository.
 
 ## Run any agent
 
@@ -93,7 +97,7 @@ Outputs: `final-message`, `output-file`, `result-json`, `structured-output`.
 | `model-defaults`  |                         | JSON map of provider → default model short-id.        |
 | `review-marker`   | `<!-- texra-review -->` | Marker used to find TeXRA review threads.             |
 | `resolve-threads` | `false`                 | Reply/resolve threads (needs a thread-capable token). |
-| `github-token`    | `${{ github.token }}`   | Token for reading threads and posting the review.     |
+| `github-token`    |                         | Explicit token override; empty uses TeXRA App OIDC.   |
 
 Outputs: `review-json`, `final-message`, `model`, `output-file`.
 
@@ -104,13 +108,15 @@ Full reference: [docs/usage.md](./docs/usage.md) ·
 ## How it works
 
 1. Installs Bun and Node, then installs the action's dependencies.
-2. Installs `@texra-ai/cli` from npm (or builds a `workspace` checkout).
-3. (review) Computes the PR diff and the commentable-line anchors, collects
+2. Exchanges GitHub Actions OIDC for a short-lived TeXRA App installation
+   token. An explicit `github-token` overrides this.
+3. Installs `@texra-ai/cli` from npm (or builds a `workspace` checkout).
+4. (review) Computes the PR diff and the commentable-line anchors, collects
    previous TeXRA review threads, and assembles the prompt.
-4. Runs `texra agents run <agent> --output-format json --print`
+5. Runs `texra agents run <agent> --output-format json --print`
    (`--api-mode personal --approval-policy yolo`, so the agent has the bash tool
    and full tool access; set `approval-policy: never` for a read-only run).
-5. (review) Normalizes the agent's JSON and posts a single `COMMENT` review
+6. (review) Normalizes the agent's JSON and posts a single `COMMENT` review
    with inline comments that land on commentable lines.
 
 ## Security
