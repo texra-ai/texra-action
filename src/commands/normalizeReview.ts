@@ -13,13 +13,21 @@ import { DEFAULT_REVIEW_BODY, normalizeReview } from "../review/normalize";
 export async function run(): Promise<void> {
   const resultJson = process.env.RESULT_JSON || "";
   const temp = runnerTemp();
-  const { finalMessage } = loadCliResult(resultJson);
-  const rawFinalMessage =
-    finalMessage && !isStatusOnlyMessage(finalMessage)
-      ? finalMessage
-      : DEFAULT_REVIEW_BODY;
+  const { finalMessage, structured } = loadCliResult(resultJson);
+  const hasUsableMessage = Boolean(
+    finalMessage && !isStatusOnlyMessage(finalMessage),
+  );
+  if (!hasUsableMessage && structured === undefined) {
+    // Keep posting the fallback body so the review marker still lands, but
+    // make the breakage visible: a silent fallback masked a CLI result-field
+    // rename for days (texra-ai/texra-action#6).
+    core.warning(
+      `TeXRA run ended without a usable final review message (got ${JSON.stringify(finalMessage)}); posting the fallback review body.`,
+    );
+  }
+  const rawFinalMessage = hasUsableMessage ? finalMessage : DEFAULT_REVIEW_BODY;
 
-  const review = normalizeReview(rawFinalMessage);
+  const review = normalizeReview(rawFinalMessage, structured);
   const body = review.body.trim();
 
   const outputFile =

@@ -13,7 +13,8 @@ import { runnerTemp } from "../lib/runnerEnv";
  */
 export async function run(): Promise<void> {
   const resultJson = process.env.RESULT_JSON || "";
-  const { finalMessage } = loadCliResult(resultJson);
+  const { finalMessage, structured: nativeStructured } =
+    loadCliResult(resultJson);
 
   const outputFile =
     readInputs().outputFile.trim() ||
@@ -21,7 +22,10 @@ export async function run(): Promise<void> {
   mkdirSync(dirname(outputFile), { recursive: true });
   writeFileSync(outputFile, `${finalMessage}\n`);
 
-  const structured = parseModelJson(finalMessage);
+  const structured =
+    nativeStructured !== undefined
+      ? nativeStructured
+      : parseModelJson(finalMessage);
   core.setOutput("final-message", finalMessage);
   core.setOutput("output-file", outputFile);
   core.setOutput("result-json", resultJson);
