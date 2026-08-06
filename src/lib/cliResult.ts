@@ -6,12 +6,14 @@ import { readFileSync } from "node:fs";
  *
  * The CLI may wrap its payload as `{ result: {...} }` or emit the result object
  * directly; both shapes are handled. The agent's last assistant message lives on
- * `result.lastResponse`.
+ * `result.response` (named `result.lastResponse` before the TeXRA CLI
+ * canonicalized its tool-use result fields in Aug 2026; both names are read so
+ * the action works across CLI versions).
  */
 export interface CliResult {
   payload: Record<string, unknown>;
   result: Record<string, unknown>;
-  /** Trimmed `result.lastResponse`, or "" when absent. */
+  /** Trimmed `result.response` (legacy `result.lastResponse`), or "" when absent. */
   finalMessage: string;
 }
 
@@ -53,6 +55,8 @@ export function loadCliResult(resultJsonPath: string): CliResult {
   }
   const result = ((payload.result as Record<string, unknown>) ??
     payload) as Record<string, unknown>;
-  const finalMessage = String((result.lastResponse as string) || "").trim();
+  const finalMessage = String(
+    ((result.response ?? result.lastResponse) as string) || "",
+  ).trim();
   return { payload, result, finalMessage };
 }
