@@ -179,7 +179,7 @@ runs:
           run "${GITHUB_ACTION_PATH}/src/main.ts" setup-github-token
 
     - name: Check repository write access
-      if: ${{ inputs.require-write-access == 'true' }}
+      if: ${{ steps.auth.outputs.skipped != 'true' && inputs.require-write-access == 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -190,6 +190,7 @@ runs:
           run "${GITHUB_ACTION_PATH}/src/main.ts" check-write-access
 
     - name: Install TeXRA CLI
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         TEXRA_VERSION: ${{ inputs.texra-version }}
@@ -215,6 +216,7 @@ runs:
 
     - name: Resolve prompt
       id: prompt
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -225,6 +227,7 @@ runs:
 
     - name: Run TeXRA
       id: run
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -237,6 +240,7 @@ runs:
 
     - name: Parse result
       id: parse
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}

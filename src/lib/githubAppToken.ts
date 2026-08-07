@@ -2,10 +2,24 @@ const OIDC_AUDIENCE = "texra-github-action";
 const TOKEN_EXCHANGE_URL =
   "https://remote.texra.ai/functions/v1/github-app-token-exchange";
 
+/**
+ * The exchange reports this when the workflow requesting a token differs from
+ * the copy on the default branch, which is the normal state of a pull request
+ * that edits its own workflow file. It is a skip, not a failure.
+ */
+const UNTRUSTED_WORKFLOW_CODE = "workflow_not_on_default_branch";
+
 interface TokenExchangeResponse {
   token?: unknown;
   app_token?: unknown;
   error?: unknown;
+  code?: unknown;
+}
+
+export interface ResolvedGitHubToken {
+  token: string;
+  /** Set when the App declined to authenticate this run; callers should skip. */
+  untrustedWorkflowReason?: string;
 }
 
 type Fetch = (
@@ -23,8 +37,8 @@ export interface ResolveGitHubTokenOptions {
 /** Resolve an explicit override or exchange GitHub Actions OIDC for the TeXRA App token. */
 export async function resolveGitHubToken(
   options: ResolveGitHubTokenOptions,
-): Promise<string> {
-  if (options.providedToken) return options.providedToken;
+): Promise<ResolvedGitHubToken> {
+  if (options.providedToken) return { token: options.providedToken };
 
   let oidcToken: string;
   try {
@@ -53,6 +67,15 @@ export async function resolveGitHubToken(
 
   if (!response.ok) {
     const detail = typeof body.error === "string" ? `: ${body.error}` : "";
+    if (body.code === UNTRUSTED_WORKFLOW_CODE) {
+      return {
+        token: "",
+        untrustedWorkflowReason:
+          typeof body.error === "string"
+            ? body.error
+            : "the workflow does not match the repository default branch",
+      };
+    }
     throw new Error(
       `TeXRA GitHub App token exchange failed (${response.status})${detail}`,
     );
@@ -69,5 +92,5 @@ export async function resolveGitHubToken(
       "TeXRA GitHub App token exchange returned no installation token",
     );
   }
-  return token;
+  return { token };
 }

@@ -61,7 +61,9 @@ refuses bots unless they are allow-listed.
 - The exchange accepts only a signed GitHub OIDC token whose exact workflow
   blob matches the same workflow path on the repository's default branch. A
   workflow introduced or modified only on a pull-request branch cannot mint an
-  App token.
+  App token; such a run logs a notice and finishes without doing any work, so
+  pull requests that edit their own workflow do not fail. Merge the workflow
+  change, or set `github-token`, to run on that branch.
 - The App token is passed only to authorization and GitHub API steps. It is not
   placed in the environment of the TeXRA CLI or agent process.
 - `github-token` remains an explicit override for custom Apps and other

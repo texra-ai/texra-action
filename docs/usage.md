@@ -79,6 +79,9 @@ cli-args: --max-turns 20
   repository and grant the job `id-token: write`. The action exchanges OIDC for
   a short-lived App token. Set `github-token` only to override this with a
   controlled custom credential.
+- A pull request that edits the workflow file itself cannot use App
+  authentication until the change reaches the default branch. Those runs log a
+  notice and do nothing rather than failing.
 - An interactive checkout is **not** used; the action never runs the TeXRA TUI.
 - Review mode requires `fetch-depth: 0` so the merge base is reachable.
 - Node 22 and Bun are installed by the action; no setup is needed in your job.

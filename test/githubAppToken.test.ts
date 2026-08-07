@@ -4,7 +4,7 @@ import { resolveGitHubToken } from "../src/lib/githubAppToken";
 describe("resolveGitHubToken", () => {
   it("uses an explicit token without requesting OIDC", async () => {
     let requestedOidc = false;
-    const token = await resolveGitHubToken({
+    const resolved = await resolveGitHubToken({
       providedToken: "override",
       getIdToken: () => {
         requestedOidc = true;
@@ -13,14 +13,14 @@ describe("resolveGitHubToken", () => {
       fetchImpl: fetch,
     });
 
-    expect(token).toBe("override");
+    expect(resolved.token).toBe("override");
     expect(requestedOidc).toBe(false);
   });
 
   it("exchanges the expected OIDC audience", async () => {
     let audience = "";
     let authorization = "";
-    const token = await resolveGitHubToken({
+    const resolved = await resolveGitHubToken({
       providedToken: "",
       getIdToken: (value) => {
         audience = value;
@@ -34,7 +34,30 @@ describe("resolveGitHubToken", () => {
 
     expect(audience).toBe("texra-github-action");
     expect(authorization).toBe("Bearer oidc-token");
-    expect(token).toBe("installation-token");
+    expect(resolved.token).toBe("installation-token");
+    expect(resolved.untrustedWorkflowReason).toBeUndefined();
+  });
+
+  it("reports a skip when the workflow is not on the default branch", async () => {
+    const resolved = await resolveGitHubToken({
+      providedToken: "",
+      getIdToken: () => Promise.resolve("oidc-token"),
+      fetchImpl: () =>
+        Promise.resolve(
+          Response.json(
+            {
+              error: "TeXRA workflow must match the repository default branch",
+              code: "workflow_not_on_default_branch",
+            },
+            { status: 403 },
+          ),
+        ),
+    });
+
+    expect(resolved.token).toBe("");
+    expect(resolved.untrustedWorkflowReason).toBe(
+      "TeXRA workflow must match the repository default branch",
+    );
   });
 
   it("explains the id-token permission when OIDC is unavailable", async () => {

@@ -149,7 +149,7 @@ runs:
           run "${GITHUB_ACTION_PATH}/../src/main.ts" setup-github-token
 
     - name: Check repository write access
-      if: ${{ inputs.require-write-access == 'true' }}
+      if: ${{ steps.auth.outputs.skipped != 'true' && inputs.require-write-access == 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -160,6 +160,7 @@ runs:
           run "${GITHUB_ACTION_PATH}/../src/main.ts" check-write-access
 
     - name: Install TeXRA CLI
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         TEXRA_VERSION: ${{ inputs.texra-version }}
@@ -184,6 +185,7 @@ runs:
 
     - name: Resolve review model
       id: model
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -194,6 +196,7 @@ runs:
 
     - name: Prepare PR diff and commentable lines
       id: diff
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       run: |
         bun --no-env-file \
@@ -202,6 +205,7 @@ runs:
 
     - name: Collect previous TeXRA review threads
       id: threads
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -213,6 +217,7 @@ runs:
 
     - name: Write review prompt context
       id: context
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         # PR metadata is read natively from the @actions/github event context.
@@ -227,6 +232,7 @@ runs:
 
     - name: Resolve prompt
       id: prompt
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -240,6 +246,7 @@ runs:
 
     - name: Run TeXRA review
       id: run
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -257,6 +264,7 @@ runs:
 
     - name: Normalize review
       id: normalize
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
@@ -267,6 +275,7 @@ runs:
           run "${GITHUB_ACTION_PATH}/../src/main.ts" normalize-review
 
     - name: Post TeXRA review
+      if: ${{ steps.auth.outputs.skipped != 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
