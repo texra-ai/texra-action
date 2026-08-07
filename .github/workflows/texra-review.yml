@@ -19,6 +19,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -30,5 +31,4 @@ jobs:
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
-          github-token: ${{ secrets.TEXRA_REVIEW_GITHUB_TOKEN || github.token }}
-          resolve-threads: ${{ secrets.TEXRA_REVIEW_GITHUB_TOKEN != '' }}
+          resolve-threads: "true"

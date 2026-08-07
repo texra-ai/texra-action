@@ -57,11 +57,11 @@ threads on subsequent runs.
 ## Thread actions and tokens
 
 Reply / resolve / unresolve mutations only run when `resolve-threads: true`
-**and** the `github-token` is allowed to mutate threads. The default
-`${{ github.token }}` can create reviews but may not be able to resolve threads
-authored by another identity; pass a dedicated bot token (e.g.
-`TEXRA_REVIEW_GITHUB_TOKEN`) to enable them. When a token is missing, thread
-actions are skipped with a notice rather than failing the run.
+**and** the GitHub token is allowed to mutate threads. The default OIDC path
+uses the installed TeXRA GitHub App, so its identity remains stable across
+runs. An explicit `github-token` overrides the App token. When thread mutation
+is disabled, requested thread actions are skipped with a notice rather than
+failing the run.
 
 ## Failure behavior
 

@@ -11,6 +11,8 @@
 import * as core from "@actions/core";
 
 const commands: Record<string, () => Promise<void>> = {
+  "setup-github-token": () =>
+    import("./commands/setupGithubToken").then((m) => m.run()),
   "check-write-access": () =>
     import("./commands/checkWriteAccess").then((m) => m.run()),
   "resolve-prompt": () =>

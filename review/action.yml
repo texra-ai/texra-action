@@ -39,9 +39,9 @@ inputs:
     required: false
     default: "false"
   github-token:
-    description: "Token used to read threads and post the review. A dedicated bot token enables thread mutations."
+    description: "GitHub token override. Empty exchanges Actions OIDC for the installed TeXRA GitHub App."
     required: false
-    default: ${{ github.token }}
+    default: ""
   output-file:
     description: "File where the final review message is written. Empty writes under RUNNER_TEMP."
     required: false
@@ -138,11 +138,22 @@ runs:
         cd "${GITHUB_ACTION_PATH}/.."
         bun install --production --frozen-lockfile
 
+    - name: Authenticate as TeXRA GitHub App
+      id: auth
+      shell: bash
+      env:
+        INPUTS: ${{ toJson(inputs) }}
+      run: |
+        bun --no-env-file \
+          --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
+          run "${GITHUB_ACTION_PATH}/../src/main.ts" setup-github-token
+
     - name: Check repository write access
       if: ${{ inputs.require-write-access == 'true' }}
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
+        TEXRA_GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -194,6 +205,7 @@ runs:
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
+        TEXRA_GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
       run: |
         bun --no-env-file \
           --config="${GITHUB_ACTION_PATH}/../bunfig.toml" \
@@ -258,6 +270,7 @@ runs:
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
+        TEXRA_GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
         TEXRA_REVIEW_JSON: ${{ steps.normalize.outputs.review-json }}
         TEXRA_COMMENTABLE_LINES_JSON: ${{ steps.diff.outputs.commentable-lines-json }}
         TEXRA_THREADS_JSON: ${{ steps.threads.outputs.path }}

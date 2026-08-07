@@ -60,6 +60,7 @@ cli-args: --max-turns 20
 | `output-file`       | Path to a file containing the final message.              |
 | `result-json`       | Path to the raw `texra ... --output-format json` payload. |
 | `structured-output` | JSON object extracted from the final message, if present. |
+| `github-token`      | Short-lived App token for a later GitHub API step.        |
 
 ```yaml
 - id: texra
@@ -74,6 +75,10 @@ cli-args: --max-turns 20
 
 ## Requirements
 
+- Install the [TeXRA GitHub App](https://github.com/apps/texra-ai-bot) on the
+  repository and grant the job `id-token: write`. The action exchanges OIDC for
+  a short-lived App token. Set `github-token` only to override this with a
+  controlled custom credential.
 - An interactive checkout is **not** used; the action never runs the TeXRA TUI.
 - Review mode requires `fetch-depth: 0` so the merge base is reachable.
 - Node 22 and Bun are installed by the action; no setup is needed in your job.

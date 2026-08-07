@@ -199,7 +199,7 @@ export async function postTexraReview(
   }
   if (skippedThreadActions > 0) {
     logger.notice(
-      `Skipped ${skippedThreadActions} TeXRA review-thread action(s). Configure a dedicated github-token (e.g. TEXRA_REVIEW_GITHUB_TOKEN) to post previous-thread follow-ups as the TeXRA GitHub identity.`,
+      `Skipped ${skippedThreadActions} TeXRA review-thread action(s). Set resolve-threads to true to let the TeXRA GitHub App apply previous-thread follow-ups.`,
     );
   }
 }
