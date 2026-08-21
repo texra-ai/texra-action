@@ -21,11 +21,6 @@ the CLI as the environment variable the CLI reads (`<PROVIDER>_API_KEY`):
 Provide only the keys you use. Keys are injected only into the step that runs the
 CLI (and, for review mode, the model-resolution step).
 
-## API mode
-
-`api-mode` defaults to `personal`, which makes the CLI use the provider keys
-above rather than a TeXRA login. Keep `personal` in CI.
-
 ## Approval policy
 
 `approval-policy` defaults to `yolo`: the agent has the bash tool and unrestricted

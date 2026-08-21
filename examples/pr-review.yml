@@ -35,4 +35,4 @@ jobs:
           # deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
           # Optional: pin the model and CLI version.
           # model: opus48T
-          # texra-version: 0.38.5
+          # texra-version: 0.40.3 # Minimum supported CLI version.

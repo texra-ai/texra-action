@@ -25,7 +25,7 @@ jobs:
           prompt: ${{ inputs.task }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Pass extra CLI flags (JSON array or shell string):
-          # cli-args: '["--max-turns","20"]'
+          # cli-args: '["--no-color"]'
 
       - name: Use the result
         env:

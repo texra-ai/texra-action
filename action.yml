@@ -45,10 +45,6 @@ inputs:
     description: "Version of @texra-ai/cli to install. Empty or 'latest' installs the latest published version; 'workspace' builds the local checkout."
     required: false
     default: ""
-  api-mode:
-    description: "TeXRA API mode. Use 'personal' in CI so provider API keys are used instead of a TeXRA login."
-    required: false
-    default: "personal"
   approval-policy:
     description: "Approval policy for tool actions. 'yolo' (default) auto-approves every action, enabling the bash tool and unrestricted tool calls; 'never' keeps the run read-only."
     required: false

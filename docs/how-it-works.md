@@ -27,8 +27,7 @@ together in `review/action.yml`:
 
 ```
 texra agents run <agent> --instruction-file <prompt> --cwd <workspace> \
-  --api-mode <api-mode> --approval-policy <approval-policy> \
-  --output-format json --print \
+  --approval-policy <approval-policy> --output-format json --print \
   --context <pr.diff> --context <commentable-lines.md> --context <threads.json>
 ```
 
@@ -36,8 +35,7 @@ texra agents run <agent> --instruction-file <prompt> --cwd <workspace> \
   any prior threads, then inspects the repository files.
 - `--approval-policy` sets the capability ceiling. See
   [approval policy](#approval-policy-and-capabilities).
-- `--api-mode personal` runs against the provider keys you pass in, not a
-  hosted relay. Keys are injected into the CLI subprocess environment as
+- Provider keys are injected into the CLI subprocess environment as
   `<PROVIDER>_API_KEY` (`src/lib/providers.ts`); they are never written to disk
   or passed on the command line.
 

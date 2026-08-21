@@ -2,8 +2,8 @@
 
 ## Capability model
 
-By default the action runs the agent with `--api-mode personal --approval-policy
-yolo`. Under `yolo` every tool action is auto-approved: the agent has the bash
+By default the action runs the agent with `--approval-policy yolo`. Under
+`yolo` every tool action is auto-approved: the agent has the bash
 tool and unrestricted tool calls, and runs shell commands in the runner with the
 same privileges as any other step in the job. The agent never holds a GitHub
 token; it emits a JSON review that the action posts. Within the runner, though,

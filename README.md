@@ -79,7 +79,6 @@ See [`examples/`](./examples) for path-filtered review, custom prompts,
 | `model`                |                           | Model id (`--model`). Empty uses the agent default.                                                     |
 | `context-files`        |                           | Newline-separated read-only files passed as `--context`.                                                |
 | `texra-version`        | `` (latest)               | CLI version; `workspace` builds a local checkout.                                                       |
-| `api-mode`             | `personal`                | Use `personal` so provider keys are used (not a TeXRA login).                                           |
 | `approval-policy`      | `yolo`                    | `yolo` enables bash + unrestricted tool calls; `never` is read-only.                                    |
 | `working-directory`    | `${{ github.workspace }}` | Directory the agent runs against (`--cwd`).                                                             |
 | `cli-args`             |                           | Extra CLI args (JSON array or shell string).                                                            |
@@ -113,9 +112,9 @@ Full reference: [docs/usage.md](./docs/usage.md) ·
 3. Installs `@texra-ai/cli` from npm (or builds a `workspace` checkout).
 4. (review) Computes the PR diff and the commentable-line anchors, collects
    previous TeXRA review threads, and assembles the prompt.
-5. Runs `texra agents run <agent> --output-format json --print`
-   (`--api-mode personal --approval-policy yolo`, so the agent has the bash tool
-   and full tool access; set `approval-policy: never` for a read-only run).
+5. Runs `texra agents run <agent> --output-format json --print` with
+   `--approval-policy yolo`, so the agent has the bash tool and full tool access;
+   set `approval-policy: never` for a read-only run.
 6. (review) Normalizes the agent's JSON and posts a single `COMMENT` review
    with inline comments that land on commentable lines.
 

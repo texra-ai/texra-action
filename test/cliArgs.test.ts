@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseCliArgs } from "../src/lib/cliArgs";
+import { buildAgentArgs, parseCliArgs } from "../src/lib/cliArgs";
 
 describe("parseCliArgs", () => {
   it("returns an empty array for blank input", () => {
@@ -8,14 +8,13 @@ describe("parseCliArgs", () => {
   });
 
   it("parses a JSON array", () => {
-    expect(parseCliArgs('["--max-turns","12"]')).toEqual(["--max-turns", "12"]);
+    expect(parseCliArgs('["--no-color"]')).toEqual(["--no-color"]);
   });
 
   it("splits a shell-style string", () => {
-    expect(parseCliArgs("--max-turns 12 --verbose")).toEqual([
-      "--max-turns",
-      "12",
-      "--verbose",
+    expect(parseCliArgs("--no-color --quiet")).toEqual([
+      "--no-color",
+      "--quiet",
     ]);
   });
 
@@ -37,5 +36,45 @@ describe("parseCliArgs", () => {
 
   it("falls back to shell-splitting a malformed JSON-array value", () => {
     expect(parseCliArgs("[broken --flag")).toEqual(["[broken", "--flag"]);
+  });
+});
+
+describe("buildAgentArgs", () => {
+  it("builds the action's CLI argument list", () => {
+    const args = buildAgentArgs(
+      {
+        agent: "review",
+        approvalPolicy: "yolo",
+        outputFormat: "json",
+      },
+      ".texra/prompt.md",
+      "/workspace",
+      "opus48T",
+      ["pr.diff", "threads.json"],
+      ["--no-color"],
+    );
+
+    expect(args).toEqual([
+      "agents",
+      "run",
+      "review",
+      "--instruction-file",
+      ".texra/prompt.md",
+      "--cwd",
+      "/workspace",
+      "--approval-policy",
+      "yolo",
+      "--output-format",
+      "json",
+      "--print",
+      "--model",
+      "opus48T",
+      "--context",
+      "pr.diff",
+      "--context",
+      "threads.json",
+      "--no-color",
+    ]);
+    expect(args).not.toContain("--api-mode");
   });
 });

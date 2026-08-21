@@ -33,12 +33,13 @@ passed with `context-files` (newline-separated), each forwarded as `--context`.
 | ----------- | ----------------------------------------------------------- |
 | `` (empty)  | Installs the latest published `@texra-ai/cli`.              |
 | `latest`    | Same as empty.                                              |
-| `1.2.3`     | Installs that exact published version (recommended to pin). |
+| `0.40.3`    | Installs that exact published version (recommended to pin). |
 | `workspace` | Builds the CLI from the checked-out monorepo (dogfooding).  |
 
-Because the action installs the CLI from npm, pinning `texra-version` to a
-known-good release keeps your workflow reproducible. `workspace` only works when
-the checked-out repository is the TeXRA monorepo.
+The action supports `@texra-ai/cli` 0.40.3 and newer. Because it installs the
+CLI from npm, pinning `texra-version` to a known-good compatible release keeps
+your workflow reproducible. `workspace` only works when the checked-out
+repository is the TeXRA monorepo.
 
 ## Passing extra CLI flags
 
@@ -47,9 +48,9 @@ starting with `[` is parsed as a JSON array; otherwise it is split shell-style
 with basic quote support.
 
 ```yaml
-cli-args: '["--max-turns","20"]'
+cli-args: '["--no-color"]'
 # or
-cli-args: --max-turns 20
+cli-args: --no-color
 ```
 
 ## Outputs (core action)

@@ -1,5 +1,39 @@
 import parseArgsStringToArgv from "string-argv";
 
+interface AgentArgInputs {
+  agent: string;
+  approvalPolicy: string;
+  outputFormat: string;
+}
+
+export function buildAgentArgs(
+  inputs: AgentArgInputs,
+  promptRelative: string,
+  workingDirectory: string,
+  model: string,
+  contextFiles: string[],
+  extraArgs: string[],
+): string[] {
+  const args = [
+    "agents",
+    "run",
+    inputs.agent,
+    "--instruction-file",
+    promptRelative,
+    "--cwd",
+    workingDirectory,
+    "--approval-policy",
+    inputs.approvalPolicy,
+    "--output-format",
+    inputs.outputFormat,
+    "--print",
+  ];
+  if (model) args.push("--model", model);
+  for (const file of contextFiles) args.push("--context", file);
+  args.push(...extraArgs);
+  return args;
+}
+
 /**
  * Parse a passthrough `cli-args` input into an argv array. A value starting with
  * `[` is parsed as a JSON array; otherwise it is split shell-style (handling

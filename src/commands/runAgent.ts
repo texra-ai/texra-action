@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import { spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseCliArgs } from "../lib/cliArgs";
+import { buildAgentArgs, parseCliArgs } from "../lib/cliArgs";
 import { readInputs } from "../lib/inputs";
 import { splitLines } from "../lib/lines";
 import { providerEnv } from "../lib/providers";
@@ -30,25 +30,14 @@ export async function run(): Promise<void> {
   );
   const extraArgs = parseCliArgs(inputs.cliArgs);
 
-  const args = [
-    "agents",
-    "run",
-    inputs.agent,
-    "--instruction-file",
+  const args = buildAgentArgs(
+    inputs,
     promptRelative,
-    "--cwd",
     workingDirectory,
-    "--api-mode",
-    inputs.apiMode,
-    "--approval-policy",
-    inputs.approvalPolicy,
-    "--output-format",
-    inputs.outputFormat,
-    "--print",
-  ];
-  if (model) args.push("--model", model);
-  for (const file of contextFiles) args.push("--context", file);
-  args.push(...extraArgs);
+    model,
+    contextFiles,
+    extraArgs,
+  );
 
   const command =
     inputs.texraVersion.trim() === "workspace"
