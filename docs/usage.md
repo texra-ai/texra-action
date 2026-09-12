@@ -6,7 +6,7 @@ The repository ships two actions:
 - **`texra-ai/texra-action/review@v1`**: review mode, which wraps the runner
   with diff preparation and pull-request posting.
 
-Both install `@texra-ai/cli` and run `texra agents run`. They differ only in the
+Both install `@texra-ai/cli` and run `texra run`. They differ only in the
 surrounding steps.
 
 ## Providing the prompt
@@ -36,14 +36,14 @@ passed with `context-files` (newline-separated), each forwarded as `--context`.
 | `0.40.3`    | Installs that exact published version (recommended to pin). |
 | `workspace` | Builds the CLI from the checked-out monorepo (dogfooding).  |
 
-The action supports `@texra-ai/cli` 0.40.3 and newer. Because it installs the
+The action supports `@texra-ai/cli` 0.41.0 and newer. TeXRA 0.41 folded `texra agents run` into `texra run`; action v1.x is the version to use with CLI 0.40.x. Because it installs the
 CLI from npm, pinning `texra-version` to a known-good compatible release keeps
 your workflow reproducible. `workspace` only works when the checked-out
 repository is the TeXRA monorepo.
 
 ## Passing extra CLI flags
 
-`cli-args` is appended verbatim to the `texra agents run` invocation. A value
+`cli-args` is appended verbatim to the `texra run` invocation. A value
 starting with `[` is parsed as a JSON array; otherwise it is split shell-style
 with basic quote support.
 

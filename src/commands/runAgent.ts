@@ -9,7 +9,7 @@ import { providerEnv } from "../lib/providers";
 import { runnerTemp, workspaceDir } from "../lib/runnerEnv";
 
 /**
- * Run `texra agents run <agent> ... --output-format json --print`, capturing the
+ * Run `texra run <agent> ... --output-format json --print`, capturing the
  * JSON payload to a file and forwarding the CLI's stderr and exit status. When
  * `texra-version` is `workspace`, runs the locally built CLI bundle instead.
  *
