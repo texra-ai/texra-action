@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { z } from "zod";
 
 /**
- * Read and validate the JSON emitted by `texra agents run ... --output-format
+ * Read and validate the JSON emitted by `texra run ... --output-format
  * json --print`.
  *
  * The CLI may wrap its payload as `{ result: {...} }` or emit the result object

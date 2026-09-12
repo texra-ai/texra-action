@@ -26,7 +26,7 @@ together in `review/action.yml`:
 `run-agent` shells out to the CLI:
 
 ```
-texra agents run <agent> --instruction-file <prompt> --cwd <workspace> \
+texra run <agent> --instruction-file <prompt> --cwd <workspace> \
   --approval-policy <approval-policy> --output-format json --print \
   --context <pr.diff> --context <commentable-lines.md> --context <threads.json>
 ```

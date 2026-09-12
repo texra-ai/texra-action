@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.0.0 (unreleased)
+
+### Breaking
+
+- **The action now runs `texra run <agent>`,** not `texra agents run <agent>`.
+  TeXRA 1.0 folds the two headless commands into one `run` that resolves the
+  agent and branches on its category, so the old spelling no longer exists.
+- **Requires `@texra-ai/cli` 0.41.0 or newer.** The action installs the latest
+  published CLI by default, so v1.x stops working once 0.41 is published; pin
+  `cli-version` to a 0.40.x release to stay on v1.x.
+
+Nothing else changes: the same inputs, outputs, and JSON result contract.
+
 ## v1.1.0
 
 ### Changed

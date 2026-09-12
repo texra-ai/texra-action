@@ -5,7 +5,7 @@ review pull requests inline, or to run any TeXRA agent headlessly in CI and
 consume its output.
 
 The action installs the [`@texra-ai/cli`](https://www.npmjs.com/package/@texra-ai/cli),
-runs `texra agents run` against your repository, and (in review mode) posts a
+runs `texra run` against your repository, and (in review mode) posts a
 pull-request review with inline comments and a summary.
 
 ## Quickstart: pull request review
@@ -112,7 +112,7 @@ Full reference: [docs/usage.md](./docs/usage.md) ·
 3. Installs `@texra-ai/cli` from npm (or builds a `workspace` checkout).
 4. (review) Computes the PR diff and the commentable-line anchors, collects
    previous TeXRA review threads, and assembles the prompt.
-5. Runs `texra agents run <agent> --output-format json --print` with
+5. Runs `texra run <agent> --output-format json --print` with
    `--approval-policy yolo`, so the agent has the bash tool and full tool access;
    set `approval-policy: never` for a read-only run.
 6. (review) Normalizes the agent's JSON and posts a single `COMMENT` review

@@ -55,7 +55,6 @@ describe("buildAgentArgs", () => {
     );
 
     expect(args).toEqual([
-      "agents",
       "run",
       "review",
       "--instruction-file",

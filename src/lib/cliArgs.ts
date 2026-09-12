@@ -15,7 +15,6 @@ export function buildAgentArgs(
   extraArgs: string[],
 ): string[] {
   const args = [
-    "agents",
     "run",
     inputs.agent,
     "--instruction-file",
