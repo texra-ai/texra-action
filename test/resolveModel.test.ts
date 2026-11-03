@@ -24,7 +24,7 @@ describe("resolveReviewModel", () => {
       resolveReviewModel({
         providerKeys: { deepseek: "k", anthropic: "k" },
       }),
-    ).toEqual({ model: "deepseekproT", source: "deepseek" });
+    ).toEqual({ model: "deepseek/deepseek-flash", source: "deepseek" });
   });
 
   it("honors default-model overrides", () => {
@@ -38,7 +38,7 @@ describe("resolveReviewModel", () => {
 
   it("falls back to the deepseek default with no keys", () => {
     expect(resolveReviewModel({})).toEqual({
-      model: "deepseekproT",
+      model: "deepseek/deepseek-flash",
       source: "default",
     });
   });
