@@ -19,7 +19,7 @@ export const PROVIDERS: ProviderSpec[] = [
     id: "deepseek",
     envVar: "DEEPSEEK_API_KEY",
     inputKey: "deepseek-api-key",
-    reviewDefaultModel: "deepseekproT",
+    reviewDefaultModel: "deepseek/deepseek-flash",
   },
   {
     id: "anthropic",
