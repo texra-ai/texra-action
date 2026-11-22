@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **An empty `texra-version` installs the newest 0.40 release, not `latest`.**
+  The action runs `texra agents run`, which TeXRA 1.0 removes, so a workflow
+  that names no version would break the day a 1.0 CLI is published. `latest`
+  still installs the latest published CLI when a workflow asks for it by name.
+
 ## v1.1.0
 
 ### Changed

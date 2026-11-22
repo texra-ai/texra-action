@@ -23,7 +23,7 @@ inputs:
     required: false
     default: ""
   texra-version:
-    description: "Version of @texra-ai/cli to install ('' / 'latest' / a version / 'workspace')."
+    description: "Version of @texra-ai/cli to install ('' for the newest 0.40 release / a version / 'latest' / 'workspace')."
     required: false
     default: ""
   approval-policy:
@@ -176,9 +176,12 @@ runs:
           node packages/cli/dist/bin/texra.js version
           exit 0
         fi
-        package='@texra-ai/cli'
-        if [ -n "$TEXRA_VERSION" ] && [ "$TEXRA_VERSION" != "latest" ]; then
-          package="${package}@${TEXRA_VERSION}"
+        # An empty input installs the 0.40 line, the CLI this action drives
+        # with `texra agents run`; a later generation has no such command.
+        # `latest` is taken only when asked for by name.
+        package="@texra-ai/cli@${TEXRA_VERSION:-0.40}"
+        if [ "$TEXRA_VERSION" = "latest" ]; then
+          package='@texra-ai/cli'
         fi
         npm install -g "$package"
         texra version

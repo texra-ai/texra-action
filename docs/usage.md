@@ -31,15 +31,16 @@ passed with `context-files` (newline-separated), each forwarded as `--context`.
 
 | Value       | Behavior                                                    |
 | ----------- | ----------------------------------------------------------- |
-| `` (empty)  | Installs the latest published `@texra-ai/cli`.              |
-| `latest`    | Same as empty.                                              |
+| `` (empty)  | Installs the newest published 0.40 release.                 |
 | `0.40.3`    | Installs that exact published version (recommended to pin). |
+| `latest`    | Installs the latest published `@texra-ai/cli`.              |
 | `workspace` | Builds the CLI from the checked-out monorepo (dogfooding).  |
 
-The action supports `@texra-ai/cli` 0.40.3 and newer. Because it installs the
-CLI from npm, pinning `texra-version` to a known-good compatible release keeps
-your workflow reproducible. `workspace` only works when the checked-out
-repository is the TeXRA monorepo.
+The action supports `@texra-ai/cli` 0.40.3 and newer within the 0.40 line: it
+runs `texra agents run`, which the next CLI generation does not have, so an
+empty `texra-version` stays on 0.40 and never follows `latest`. Pinning an
+exact release keeps your workflow reproducible. `workspace` only works when
+the checked-out repository is the TeXRA monorepo.
 
 ## Passing extra CLI flags
 

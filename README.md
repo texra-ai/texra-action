@@ -78,7 +78,7 @@ See [`examples/`](./examples) for path-filtered review, custom prompts,
 | `agent`                | `review`                  | Tool-use agent to run.                                                                                  |
 | `model`                |                           | Model id (`--model`). Empty uses the agent default.                                                     |
 | `context-files`        |                           | Newline-separated read-only files passed as `--context`.                                                |
-| `texra-version`        | `` (latest)               | CLI version; `workspace` builds a local checkout.                                                       |
+| `texra-version`        | `` (newest 0.40)          | CLI version; `workspace` builds a local checkout.                                                       |
 | `approval-policy`      | `yolo`                    | `yolo` enables bash + unrestricted tool calls; `never` is read-only.                                    |
 | `working-directory`    | `${{ github.workspace }}` | Directory the agent runs against (`--cwd`).                                                             |
 | `cli-args`             |                           | Extra CLI args (JSON array or shell string).                                                            |
